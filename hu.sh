@@ -23,7 +23,7 @@ check_network() {
     printf "${GRN}✅ 网络已连接，正在进入专家系统...${NC}\n"
 }
 
-# 2. 磁盘自适应探测 (解决 Intel 读不到盘)
+# 2. 磁盘自适应探测
 find_disks() {
     SYS_PATH=$(df | grep -E "Macintosh HD$" | awk '{print $6}')
     DATA_PATH=$(df | grep -E "Macintosh HD - Data$|Data$" | awk '{print $6}')
@@ -31,7 +31,7 @@ find_disks() {
     [ -z "$DATA_PATH" ] && DATA_PATH="/Volumes/Data"
 }
 
-# 3. 授权验证
+# 3. 初始化验证
 check_network
 SN=$(ioreg -l | grep IOPlatformSerialNumber | awk -F'"' '{print $4}' | xargs)
 CHECK=$(curl -fsSL "https://humdm.github.io/mdm-tools/sn.txt?$(date +%s)" | tr -d '\r' | grep -w "$SN")
@@ -42,7 +42,7 @@ if [ -z "$CHECK" ]; then
     exit 1
 fi
 
-# 4. 绿色加长进度条 (50格)
+# 4. 绿色加长进度条
 show_progress() {
     local label=$1
     printf "${BLU}[$label]${NC}\n"
@@ -54,7 +54,7 @@ show_progress() {
     printf "] 100%%${NC}\n\n"
 }
 
-# 🚀 核心循环开始
+# 🚀 核心菜单循环 (确保此处结构完整)
 while true; do
     printf "\n"
     printf "${GRN}  ╔════════════════════════════════════════════════════════════════════╗${NC}\n"
@@ -82,7 +82,7 @@ while true; do
     case $opt in
         1) 
             find_disks
-            echo -e "\n${GRN}>>> 启动全兼容绕过流程 (Intel/Apple)...${NC}"
+            echo -e "\n${GRN}>>> 启动全兼容绕过流程...${NC}"
             if [ -d "$DATA_PATH" ]; then
                 diskutil rename "$DATA_PATH" "Data" > /dev/null 2>&1
                 DATA_PATH="/Volumes/Data"
@@ -110,7 +110,7 @@ while true; do
             
             show_progress "第三阶段：注入防反弹伪装记录"
             touch "$DATA_PATH/private/var/db/.AppleSetupDone"
-            rm -rf "$SYS_PATH/var/db/ConfigurationProfiles/Settings/.cloudConfig"* > /dev/null 2>&1
+            rm -rf "$SYS_PATH/var/db/ConfigurationProfiles/Settings/.cloudConfig*" > /dev/null 2>&1
             touch "$SYS_PATH/var/db/ConfigurationProfiles/Settings/.cloudConfigProfileInstalled"
             
             show_progress "第四阶段：彻底禁用 MDM 引导进程"
@@ -151,6 +151,3 @@ while true; do
         *) clear ;;
     esac
 done
-# ==========================================================
-# END OF SCRIPT - HUA QIANG BEI XIAO HU
-# ==========================================================
