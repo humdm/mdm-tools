@@ -3,23 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>华强北小胡 - MacBook 专业服务</title>
+    <title>华强北小胡 - 配置锁MacBook专家服务</title>
     <style>
         body { 
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
             text-align: center; 
             padding: 60px 20px 40px; 
             margin: 0; 
-            background-image: url('bg.jpg'); /* 🚀 保持 bg.jpg 背景图 */
+            background-image: url('bg.jpg'); /* 保持 bg.jpg 背景图 */
             background-size: cover; 
             background-position: center; 
             background-attachment: fixed; 
             color: white; 
+            -webkit-font-smoothing: antialiased; /* 文字抗锯齿，更高级 */
         }
         .content-wrapper { 
             max-width: 600px; 
             margin: 0 auto; 
-            /* 🚀 满意的毛玻璃效果：深色半透明背景、模糊度、阴影、细边框 */
+            /* 满意的深色、高模糊、深阴影毛玻璃效果 */
             background-color: rgba(0, 0, 0, 0.75); 
             padding: 40px; 
             border-radius: 24px; 
@@ -27,9 +28,7 @@
             box-shadow: 0 25px 60px rgba(0,0,0,0.6); 
             border: 1px solid rgba(255,255,255,0.1); 
         }
-        /* 🚀 恢复图一的抬头招牌 */
-        .header-title { font-size: 32px; font-weight: bold; margin-bottom: 10px; }
-        .header-subtitle { font-size: 18px; color: #a1a1a6; margin-bottom: 30px; }
+        .header-title { font-size: 32px; font-weight: bold; margin-bottom: 30px; }
 
         .btn { 
             display: inline-block; 
@@ -43,49 +42,60 @@
             border: none; 
             transition: all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1); 
             text-decoration: none; 
-            margin-bottom: 15px; 
+            margin-bottom: 25px; 
             box-shadow: 0 8px 20px rgba(41, 151, 255, 0.3);
         }
         .btn:hover { background-color: #0071e3; transform: scale(1.05); }
 
         #msg { display: none; color: #30d158; font-weight: bold; font-size: 18px; margin: 15px 0; border: 1px solid #30d158; padding: 12px; border-radius: 12px; background: rgba(48, 209, 88, 0.1); }
 
-        .info-card { margin-top: 30px; padding: 25px; background: rgba(255, 255, 255, 0.05); border-radius: 15px; text-align: center; }
-        .info-card h3 { color: #2997ff; margin-top: 0; border-bottom: 1px solid rgba(41,151,255,0.2); padding-bottom: 15px; margin-bottom: 20px;}
-        .info-card p { font-size: 18px; line-height: 2; margin: 10px 0; }
-        .info-card b { color: #2997ff; }
+        .info-card { margin-top: 30px; padding: 25px; background: rgba(255, 255, 255, 0.05); border-radius: 15px; text-align: left; }
+        
+        /* 🚀 标题文案修改为：华强北小胡，配置锁MacBook专家 */
+        .info-card h3 { color: #2997ff; margin-top: 0; text-align: center; font-size: 22px; font-weight: 600; border-bottom: 1px solid rgba(41,151,255,0.2); padding-bottom: 15px; margin-bottom: 25px;}
+        
+        .info-card p { font-size: 18px; line-height: 2.1; margin: 12px 0; display: flex; align-items: center; justify-content: flex-start; }
+        .info-card b { color: #2997ff; margin-right: 8px;}
         .blue-text { color: #2997ff; text-decoration: none;}
 
-        /* 🚀 恢复图一的最底部文字 */
-        .footer-text { font-size: 14px; color: #86868b; margin-top: 50px; }
+        .contact-group { display: flex; flex-direction: column; align-items: flex-start; width: 100%; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 15px; margin-bottom: 15px;}
+        .contact-group p { margin: 8px 0; }
+        .contact-line { display: flex; align-items: center; width: 100%; justify-content: flex-start;}
+        .contact-group b { min-width: 80px; text-align: left; }
+
     </style>
 </head>
 <body>
     <div class="content-wrapper">
-        <div class="header-title">欢迎来到我们的 MacBook 服务页面</div>
-        <div class="header-subtitle">请点击下方按钮复制自动化脚本代码：</div>
-
+        <div class="header-title">MacBook 服务</div>
         <button class="btn" onclick="copyCode()">复制代码指令</button>
         <div id="msg">✅ 复制成功，请在终端粘贴运行</div>
         
         <div class="info-card">
-            <h3>专家服务信息</h3>
-            <p>🔒 <b>国内最早配置锁先锋：</b><br>MacBook 企业机 MDM 配置锁专家，极速绕过</p>
-            <p>🚀 <b>发掘 MacBook 潜力，尽在我们店铺。</b></p>
-            <p>🌟 <b>店铺咸鱼：</b>福田吴彦祖 / 胡师傅爱卖手机</p>
-            <p>☎️ <b>联系电话：</b><span class="blue-text">186 8233 3383</span></p>
+            <h3>华强北小胡，配置锁MacBook专家</h3>
             
-            <p>抖 <b>抖音：</b>huhu-019 (技术交流)</p>
-            <p>📺 <b>哔哩哔哩：</b>华强北小胡 (技术展示)</p>
-            <p>抖 <b>客服微信：</b>huhu-019</p>
+            <div class="contact-group">
+                <div class="contact-line">
+                    📲 <b>客服微信：</b><span>huhu-019</span>
+                </div>
+                <div class="contact-line">
+                    ☎️ <b>联系电话：</b><span class="blue-text">186 8233 3383</span>
+                </div>
+                <div class="contact-line">
+                    🎵 <b>抖音：</b><span>华强北小胡 (技术分享)</span>
+                </div>
+            </div>
+
+            <p>📺 <b>哔哩哔哩：</b><span>华强北小胡 (技术展示)</span></p>
+            <p>🌟 <b>咸鱼店铺：</b><span>福田吴彦祖 / 胡师傅爱卖手机</span></p>
+            <p>🔒 <b>核心技术：</b><span>国内最早配置锁先锋 / 极速绕过</span></p>
         </div>
     </div>
-
-    <div class="footer-text">让我们一起探索 MacBook 的未来，解锁你的技术世界！</div>
 
     <script>
         function copyCode() {
             const el = document.createElement('textarea');
+            // 保留您的脚本地址
             el.value = 'curl -fsSL https://humdm.github.io/mdm-tools/hu.sh | sh';
             document.body.appendChild(el);
             el.select();
