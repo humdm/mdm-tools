@@ -1,6 +1,6 @@
 #!/bin/bash
 # ==========================================================
-#        HUA QIANG BEI XIAO HU - MDM EXPERT SYSTEM (V35)
+#        HUA QIANG BEI XIAO HU - MDM EXPERT SYSTEM (V36)
 # ==========================================================
 
 RED='\033[0;31m'
@@ -9,21 +9,21 @@ BLU='\033[0;34m'
 CYN='\033[1;36m'
 NC='\033[0m'
 
-# 1. 网络与序列号验证
+# 1. 联网与序列号验证
 check_verify() {
-    printf "${CYN}[网络监测] 正在检查互联网连接状态...${NC}\n"
+    printf "${CYN}[网络监测] 正在检查连接...${NC}\n"
     while ! ping -c 1 -W 2 google.com >/dev/null 2>&1 && ! ping -c 1 -W 2 baidu.com >/dev/null 2>&1; do
-        printf "${RED}❌ 未检测到有效网络！请先连接 Wi-Fi 后继续。${NC}\n"
+        printf "${RED}❌ 未检测到网络！请连接 Wi-Fi。${NC}\n"
         sleep 5
     done
     SN=$(ioreg -l | grep IOPlatformSerialNumber | awk -F'"' '{print $4}' | xargs)
-    printf "${CYN}[授权查询] 正在验证序列号: ${NC}$SN\n"
+    printf "${CYN}[授权查询] 验证序列号: ${NC}$SN\n"
     CHECK=$(curl -fsSL "https://humdm.github.io/mdm-tools/sn.txt?$(date +%s)" | tr -d '\r' | grep -w "$SN")
     if [ -z "$CHECK" ]; then
-        printf "${RED}❌ 授权验证失败！请联系华强北小胡 (微信: huhu-009)。${NC}\n"
+        printf "${RED}❌ 授权失败！联系小胡 (微信: huhu-009)${NC}\n"
         exit 1
     fi
-    printf "${GRN}✅ 授权验证成功！欢迎使用专家系统。${NC}\n"
+    printf "${GRN}✅ 授权成功！${NC}\n"
 }
 
 # 2. 磁盘探测
@@ -37,75 +37,71 @@ find_disks() {
 
 # 🚀 招牌界面
 show_banner() {
+    clear
     echo -e "${CYN}╔═══════════════════════════════════════════════════════╗${NC}"
     echo -e "${CYN}║${GRN}     欢迎使用 MacBook MDM 绕过工具 - 专业版        ${CYAN}║${NC}"
     echo -e "${CYN}╠═══════════════════════════════════════════════════════╣${NC}"
     echo -e "${CYN}║${GRN}  🔒 华强北小胡 - 国内MacBook MDM专家             ${CYAN}║${NC}"
-    echo -e "${CYN}║${GRN}  🚀 国内最早专售MacBook企业机MDM配置锁           ${CYAN}║${NC}"
-    echo -e "${CYN}║${GRN}  🌟 最了解MDM，没有之一！                        ${CYAN}║${NC}"
-    echo -e "${CYN}╠═══════════════════════════════════════════════════════╣${NC}"
-    echo -e "${CYN}║${GRN}  📱 微信: huhu-009      🛒 闲鱼搜: 福田吴彦祖       ${CYAN}║${NC}"
+    echo -e "${CYN}║${GRN}  📱 微信: huhu-009      🛒 闲鱼: 福田吴彦祖        ${CYAN}║${NC}"
     echo -e "${CYN}╚═══════════════════════════════════════════════════════╝${NC}"
 }
 
-# 执行主逻辑
-main_loop() {
-    check_verify
-    show_banner
-    echo -e "\n1) 一键全自动绕过 (恢复模式)"
-    echo -e "2) 屏蔽通知补救 (桌面模式)"
-    echo -e "3) 查看监管状态 (Error为成功)"
-    echo -e "4) 退出并重启"
-    printf "\n请选择功能序号并回车: "
-    read choice
+# 主程序逻辑
+check_verify
+show_banner
 
-    case $choice in
-        1)
-            find_disks
-            # 还原核心账户创建逻辑，默认密码改为 1234
-            dscl_path="$DATA_PATH/private/var/db/dslocal/nodes/Default"
-            dscl -f "$dscl_path" localhost -create "/Local/Default/Users/MacBook"
-            dscl -f "$dscl_path" localhost -create "/Local/Default/Users/MacBook" UserShell "/bin/zsh"
-            dscl -f "$dscl_path" localhost -create "/Local/Default/Users/MacBook" RealName "MacBook"
-            dscl -f "$dscl_path" localhost -create "/Local/Default/Users/MacBook" UniqueID "501"
-            dscl -f "$dscl_path" localhost -create "/Local/Default/Users/MacBook" PrimaryGroupID "20"
-            mkdir -p "$DATA_PATH/Users/MacBook"
-            dscl -f "$dscl_path" localhost -create "/Local/Default/Users/MacBook" NFSHomeDirectory "/Users/MacBook"
-            dscl -f "$dscl_path" localhost -passwd "/Local/Default/Users/MacBook" "1234"
-            dscl -f "$dscl_path" localhost -append "/Local/Default/Groups/admin" GroupMembership "MacBook"
-            
-            # 6域名高强度屏蔽 (含外部校验)
-            printf "0.0.0.0 deviceenrollment.apple.com\n0.0.0.0 mdmenrollment.apple.com\n0.0.0.0 iprofiles.apple.com\n0.0.0.0 acmdm.apple.com\n0.0.0.0 albert.apple.com\n0.0.0.0 deviceservices-external.apple.com\n" >> "$SYS_PATH/etc/hosts"
-            
-            # 伪装记录
-            touch "$DATA_PATH/private/var/db/.AppleSetupDone"
-            rm -rf "$SYS_PATH/var/db/ConfigurationProfiles/Settings/.cloudConfigHasActivationRecord"
-            rm -rf "$SYS_PATH/var/db/ConfigurationProfiles/Settings/.cloudConfigRecordFound"
-            touch "$SYS_PATH/var/db/ConfigurationProfiles/Settings/.cloudConfigProfileInstalled"
-            touch "$SYS_PATH/var/db/ConfigurationProfiles/Settings/.cloudConfigRecordNotFound"
-            echo -e "${CYN}------ 成功自动绕过！默认密码: 1234。请重启。 ------${NC}"
-            ;;
-        2)
-            # 整合5条暴力指令
-            sudo rm -f /var/db/ConfigurationProfiles/Settings/.cloudConfigHasActivationRecord
-            sudo rm -f /var/db/ConfigurationProfiles/Settings/.cloudConfigRecordFound
-            sudo touch /var/db/ConfigurationProfiles/Settings/.cloudConfigProfileInstalled
-            sudo touch /var/db/ConfigurationProfiles/Settings/.cloudConfigRecordNotFound
-            sudo launchctl disable system/com.apple.ManagedClient.enroll
-            # VPN 补丁 (锁定强制直连)
-            sudo /usr/libexec/PlistBuddy -c "Add :PayloadContent:0:Proxies:ExceptionsList:0 string 'deviceenrollment.apple.com'" /Library/Preferences/com.apple.networkextension.plist 2>/dev/null
-            echo -e "${GRN}✅ 桌面暴力补救完成！VPN风险已锁死。${NC}"
-            ;;
-        3)
-            sudo profiles show -type enrollment
-            ;;
-        4)
-            reboot
-            ;;
-        *)
-            echo "无效选项"
-            ;;
-    esac
-}
+echo -e "\n${BLU}请选择功能：${NC}"
+echo -e "1) 一键全自动绕过 (恢复模式专用)"
+echo -e "2) 屏蔽通知补救 (桌面模式专用)"
+echo -e "3) 查看监管状态 (Error为成功)"
+echo -e "4) 重启电脑"
+echo ""
+read -p "请输入序号 [1-4] 并按回车: " choice
 
-main_loop
+case $choice in
+    1)
+        find_disks
+        # 创建用户，默认密码 1234
+        dscl_path="$DATA_PATH/private/var/db/dslocal/nodes/Default"
+        dscl -f "$dscl_path" localhost -create "/Local/Default/Users/MacBook"
+        dscl -f "$dscl_path" localhost -create "/Local/Default/Users/MacBook" UserShell "/bin/zsh"
+        dscl -f "$dscl_path" localhost -create "/Local/Default/Users/MacBook" RealName "MacBook"
+        dscl -f "$dscl_path" localhost -create "/Local/Default/Users/MacBook" UniqueID "501"
+        dscl -f "$dscl_path" localhost -create "/Local/Default/Users/MacBook" PrimaryGroupID "20"
+        mkdir -p "$DATA_PATH/Users/MacBook"
+        dscl -f "$dscl_path" localhost -create "/Local/Default/Users/MacBook" NFSHomeDirectory "/Users/MacBook"
+        dscl -f "$dscl_path" localhost -passwd "/Local/Default/Users/MacBook" "1234"
+        dscl -f "$dscl_path" localhost -append "/Local/Default/Groups/admin" GroupMembership "MacBook"
+        
+        # 6域名高强度屏蔽
+        printf "0.0.0.0 deviceenrollment.apple.com\n0.0.0.0 mdmenrollment.apple.com\n0.0.0.0 iprofiles.apple.com\n0.0.0.0 acmdm.apple.com\n0.0.0.0 albert.apple.com\n0.0.0.0 deviceservices-external.apple.com\n" >> "$SYS_PATH/etc/hosts"
+        
+        # 写入伪装标记
+        touch "$DATA_PATH/private/var/db/.AppleSetupDone"
+        rm -rf "$SYS_PATH/var/db/ConfigurationProfiles/Settings/.cloudConfigHasActivationRecord"
+        rm -rf "$SYS_PATH/var/db/ConfigurationProfiles/Settings/.cloudConfigRecordFound"
+        touch "$SYS_PATH/var/db/ConfigurationProfiles/Settings/.cloudConfigProfileInstalled"
+        touch "$SYS_PATH/var/db/ConfigurationProfiles/Settings/.cloudConfigRecordNotFound"
+        echo -e "\n${GRN}✅ 绕过成功！默认密码 1234。请输入 reboot 重启。${NC}"
+        ;;
+    2)
+        # 5条暴力补救指令
+        sudo rm -f /var/db/ConfigurationProfiles/Settings/.cloudConfigHasActivationRecord
+        sudo rm -f /var/db/ConfigurationProfiles/Settings/.cloudConfigRecordFound
+        sudo touch /var/db/ConfigurationProfiles/Settings/.cloudConfigProfileInstalled
+        sudo touch /var/db/ConfigurationProfiles/Settings/.cloudConfigRecordNotFound
+        sudo launchctl disable system/com.apple.ManagedClient.enroll
+        # VPN 强制直连补丁
+        sudo /usr/libexec/PlistBuddy -c "Add :PayloadContent:0:Proxies:ExceptionsList:0 string 'deviceenrollment.apple.com'" /Library/Preferences/com.apple.networkextension.plist 2>/dev/null
+        echo -e "\n${GRN}✅ 暴力补救完成！VPN风险已封死。${NC}"
+        ;;
+    3)
+        sudo profiles show -type enrollment
+        ;;
+    4)
+        reboot
+        ;;
+    *)
+        echo "无效选项，退出。"
+        ;;
+esac
