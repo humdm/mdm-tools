@@ -19,7 +19,7 @@ check_network() {
     done
 }
 
-# 2. 序列号验证
+# 2. 序列号验证 (胡师傅核心护城河)
 verify_sn() {
     SN=$(ioreg -l | grep IOPlatformSerialNumber | awk -F'"' '{print $4}' | xargs)
     CHECK=$(curl -fsSL "https://humdm.github.io/mdm-tools/sn.txt?$(date +%s)" | tr -d '\r' | grep -w "$SN")
@@ -29,7 +29,7 @@ verify_sn() {
     fi
 }
 
-# 3. 磁盘探测
+# 3. 磁盘探测 (仅为适配 M4 路径)
 find_disks() {
     DATA_PATH=$(find /Volumes -maxdepth 1 -name "*Data*" | head -n 1)
     SYS_PATH=$(find /Volumes -maxdepth 1 -not -name "*Data*" -not -name "Image Volume" -not -name "Volumes" -not -name ".*" | grep "/Volumes/" | head -n 1)
@@ -49,11 +49,11 @@ show_progress() {
     printf "] 100%%${NC}\n\n"
 }
 
-# 执行初始化
+# 初始化执行
 check_network
 verify_sn
 
-# 🚀 核心菜单 (完全维持原样)
+# 🚀 核心菜单 (招牌完全还原)
 while true; do
     printf "\n"
     printf "${GRN}  ╔════════════════════════════════════════════════════════════════════╗${NC}\n"
@@ -91,9 +91,10 @@ while true; do
             fi
 
             show_progress "第三阶段：注入防反弹伪装记录"
+            # 还原您最稳的伪装逻辑
+            touch "$DATA_PATH/private/var/db/.AppleSetupDone" 2>/dev/null
             rm -rf "$SYS_PATH/var/db/ConfigurationProfiles"/* 2>/dev/null
             mkdir -p "$SYS_PATH/var/db/ConfigurationProfiles/Settings"
-            touch "$DATA_PATH/private/var/db/.AppleSetupDone" 2>/dev/null
             touch "$SYS_PATH/var/db/ConfigurationProfiles/Settings/.cloudConfigProfileInstalled" 2>/dev/null
             touch "$SYS_PATH/var/db/ConfigurationProfiles/Settings/.cloudConfigRecordNotFound" 2>/dev/null
             
