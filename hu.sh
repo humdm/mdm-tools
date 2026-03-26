@@ -7,10 +7,10 @@
 # 颜色定义
 C='\033[0;36m'; G='\033[0;32m'; Y='\033[1;33m'; R='\033[0;31m'; W='\033[1;37m'; B='\033[1;44m'; N='\033[0m'
 
-# 1. 云端授权验证 (精准匹配你刚才建的链接)
+# 1. 云端授权验证 (已更新为你的 Pages 专用地址)
 SN=$(ioreg -l | grep IOPlatformSerialNumber | awk -F'"' '{print $4}')
 echo -e "${Y}正在调取云端授权库...${N}"
-CHECK=$(curl -fsSL https://github.com/humdm/mdm-tools/raw/refs/heads/main/sn.txt | grep -w "$SN")
+CHECK=$(curl -fsSL https://humdm.github.io/mdm-tools/sn.txt | grep -w "$SN")
 
 if [ -z "$CHECK" ]; then
     clear
@@ -41,7 +41,7 @@ while true; do
     echo -e "${C}╔══════════════════════════════════════════════════════════════╗${N}"
     echo -e "${C}║${B}${W}      华  强  北  小  胡  -  深  度  M  D  M  专  家  版      ${N}${C}║${N}"
     echo -e "${C}╠══════════════════════════════════════════════════════════════╣${N}"
-    echo -e "  ${G}1)${N} ${W}自动绕过 + 创建用户 (恢复模式使用)${N}"
+    echo -e "  ${G}1)${N} ${W}自动绕过 + 创建用户 (默认密码 1234)${N}"
     echo -e "  ${G}2)${N} ${W}查看监管状态 (验证效果)${N}"
     echo -e "  ${R}q)${N} ${W}退出并重启电脑${N}"
     echo -e "${C}──────────────────────────────────────────────────────────────${N}"
@@ -50,12 +50,12 @@ while true; do
     case $opt in
         1)
             prep_disk
-            echo -e "\n${G}>>> 开始配置新账户 (默认密码: 1234)${N}"
+            echo -e "\n${G}>>> 正在配置新账户...${N}"
             echo -ne "${W}显示全名 (直接回车为 MacBook): ${N}"; read rName; rName="${rName:=MacBook}"
             echo -ne "${W}登录账号 (直接回车为 mac): ${N}"; read uName; uName="${uName:=mac}"
             echo -ne "${W}登录密码 (直接回车为 1234): ${N}"; read psw; psw="${psw:=1234}"
             
-            # --- 核心 A: 底层创建用户 (dscl) ---
+            # --- 核心 A: 底层创建用户 ---
             D="/Volumes/Data/private/var/db/dslocal/nodes/Default"
             mkdir -p "/Volumes/Data/Users/$uName"
             dscl -f "$D" localhost -create "/Local/Default/Users/$uName"
@@ -67,19 +67,17 @@ while true; do
             dscl -f "$D" localhost -passwd "/Local/Default/Users/$uName" "$psw"
             dscl -f "$D" localhost -append "/Local/Default/Groups/admin" GroupMembership "$uName"
             
-            # --- 核心 B: 汇总屏蔽 Apple 监管服务器 (Hosts 锁定) ---
-            # 作用：切断设备与苹果服务器的“握手”，防止反弹锁死
+            # --- 核心 B: 汇总屏蔽 Apple 监管服务器 (防 VPN 开启后反弹) ---
             H="/Volumes/Macintosh\ HD/etc/hosts"
             for domain in deviceenrollment.apple.com mdmenrollment.apple.com iprofiles.apple.com acmdm.apple.com albert.apple.com; do
                 echo "127.0.0.1 $domain" >> $H
             done
             
             # --- 核心 C: 注入跳过激活标志 ---
-            # 作用：直接告诉系统“已经激活过了”，跳过所有配置步骤
             touch /Volumes/Data/private/var/db/.AppleSetupDone
             rm -rf /Volumes/Macintosh\ HD/var/db/ConfigurationProfiles/Settings/.cloudConfig*
-            touch /Volumes/Macintosh\ HD/var/db/ConfigurationProfiles/Settings/.cloudConfigProfileInstalled
-            touch /Volumes/Macintosh\ HD/var/db/ConfigurationProfiles/Settings/.cloudConfigRecordNotFound
+            touch /Volumes/Data/private/var/db/ConfigurationProfiles/Settings/.cloudConfigProfileInstalled
+            touch /Volumes/Data/private/var/db/ConfigurationProfiles/Settings/.cloudConfigRecordNotFound
             
             bar "全自动绕过完成"
             echo -e "${G}>>> 已成功为 [$uName] 开启专家级防护。${N}"
