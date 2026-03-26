@@ -1,6 +1,6 @@
 #!/bin/bash
 # ==========================================================
-#        HUA QIANG BEI XIAO HU - MDM EXPERT SYSTEM (V22)
+#        HUA QIANG BEI XIAO HU - MDM EXPERT SYSTEM (V23)
 # ==========================================================
 
 RED='\033[1;31m'
@@ -23,7 +23,7 @@ check_network() {
     printf "${GRN}✅ 网络已连接${NC}\n"
 }
 
-# 2. 磁盘自适应探测
+# 2. 磁盘自适应探测 (针对 M4/Intel 优化)
 find_disks() {
     DATA_PATH=$(find /Volumes -maxdepth 1 -name "*Data*" | head -n 1)
     SYS_PATH=$(find /Volumes -maxdepth 1 -not -name "*Data*" -not -name "Image Volume" -not -name "Volumes" -not -name ".*" | grep "/Volumes/" | head -n 1)
@@ -31,7 +31,7 @@ find_disks() {
     [ -z "$SYS_PATH" ] && SYS_PATH="/Volumes/Macintosh HD"
 }
 
-# 3. 序列号验证
+# 3. 序列号验证 (您的护城河)
 verify_sn() {
     SN=$(ioreg -l | grep IOPlatformSerialNumber | awk -F'"' '{print $4}' | xargs)
     printf "${CYN}[授权查询] 本机序列号: ${YLW}$SN${NC}\n"
@@ -44,7 +44,7 @@ verify_sn() {
     sleep 1
 }
 
-# 4. 进度条 (优化 printf 语法)
+# 4. 绿色加长进度条
 show_progress() {
     local label=$1
     printf "${BLU}[$label]${NC}\n"
@@ -71,11 +71,11 @@ while true; do
     printf "${GRN}  ║          🔒 核心技术：国内最早配置锁先锋 | 极速绕过                ║${NC}\n"
     printf "${GRN}  ╚════════════════════════════════════════════════════════════════════╝${NC}\n"
     printf "\n"
-    printf "    ${YLW}▶ 1)${NC} ${BLU}一键全自动绕过 (M4/Intel/Apple 通杀)${NC}\n"
-    printf "    ${YLW}▶ 2)${NC} ${BLU}屏蔽通知 (恢复模式专用)${NC}\n"
+    printf "    ${YLW}▶ 1)${NC} ${BLU}一键全自动绕过 (恢复模式专用)${NC}\n"
+    printf "    ${YLW}▶ 2)${NC} ${BLU}屏蔽通知 (恢复模式专用 - 写入 Hosts)${NC}\n"
     printf "    ${YLW}▶ 3)${NC} ${BLU}屏蔽通知 (桌面模式补救专用)${NC}\n"
-    printf "    ${YLW}▶ 4)${NC} ${BLU}查看监管状态${NC}\n"
-    printf "    ${YLW}▶ 5)${NC} ${BLU}立即重启 MacBook${NC}\n"
+    printf "    ${YLW}▶ 4)${NC} ${BLU}查看监管状态 (桌面查询增强)${NC}\n"
+    printf "    ${YLW}▶ 5)${NC} ${BLU}立即重启 MacBook (自动提权版)${NC}\n"
     printf "\n"
     printf "    ${RED}✘ q)${NC} ${YLW}退出工具箱${NC}\n"
     printf "  ${GRN}──────────────────────────────────────────────────────────────────────${NC}\n"
@@ -109,7 +109,6 @@ while true; do
             fi
             
             show_progress "第三阶段：暴力清空残留监管数据库"
-            # 这一步是解决进桌面还弹窗的关键
             rm -rf "$SYS_PATH/var/db/ConfigurationProfiles"/* 2>/dev/null
             touch "$DATA_PATH/private/var/db/.AppleSetupDone" 2>/dev/null
             touch "$SYS_PATH/var/db/ConfigurationProfiles/Settings/.cloudConfigProfileInstalled" 2>/dev/null
@@ -122,14 +121,21 @@ while true; do
             printf "${YLW}★ 特别提示：进桌面前请先断开 Wi-Fi！★${NC}\n"
             sleep 3
             ;;
+        2)
+            find_disks
+            show_progress "正在同步 Hosts 屏蔽记录"
+            printf "0.0.0.0 deviceenrollment.apple.com\n0.0.0.0 mdmenrollment.apple.com\n0.0.0.0 iprofiles.apple.com\n" >> "$SYS_PATH/etc/hosts"
+            printf "${GRN}>>> [OK] 屏蔽完成！${NC}\n"
+            sleep 2
+            ;;
         3)
-            echo -e "\n${RED}⚠️  桌面加固模式：提示 Password 时输入密码并回车${NC}"
+            echo -e "\n${RED}⚠️  提示 Password 时输入开机密码并回车${NC}"
             if sudo -v; then
                 show_progress "正在清理桌面残留通知..."
                 sudo rm -rf /var/db/ConfigurationProfiles/* 2>/dev/null
                 sudo touch /var/db/ConfigurationProfiles/Settings/.cloudConfigProfileInstalled > /dev/null 2>&1
                 sudo launchctl disable system/com.apple.ManagedClient.enroll > /dev/null 2>&1
-                printf "${GRN}★ 桌面通知已强制闭嘴！请重启电脑生效。★${NC}\n"
+                printf "${GRN}★ 桌面通知已强制闭嘴！请执行选项 5 重启。★${NC}\n"
             fi
             sleep 2
             ;;
@@ -137,14 +143,17 @@ while true; do
             echo -e "\n${CYN}>>> 正在深度扫描监管状态...${NC}"
             STATUS=$(sudo profiles show -type enrollment 2>&1)
             if echo "$STATUS" | grep -q "Error"; then
-                echo -e "\n${GRN}✅ [结果]: 屏蔽极其成功！系统无法连接监管服务器。${NC}"
+                echo -e "\n${GRN}✅ [结果]: 屏蔽极其成功！系统已断开监管。${NC}"
             else
                 echo -e "\n${YLW}[结果]:${NC}\n$STATUS"
             fi
             printf "\n${CYN}按回车返回菜单...${NC}"
             read < /dev/tty
             ;;
-        5) reboot ;;
+        5) 
+            echo -e "\n${YLW}正在请求重启权限 (请输入 1234)...${NC}"
+            sudo reboot || reboot 
+            ;;
         q) exit 0 ;;
         *) clear ;;
     esac
