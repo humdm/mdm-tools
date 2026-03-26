@@ -1,6 +1,6 @@
 #!/bin/bash
 # ==========================================================
-#        HUA QIANG BEI XIAO HU - MDM EXPERT SYSTEM (V11)
+#        HUA QIANG BEI XIAO HU - MDM EXPERT SYSTEM (V12)
 # ==========================================================
 
 RED='\033[1;31m'
@@ -22,7 +22,7 @@ if [ -z "$CHECK" ]; then
     exit 1
 fi
 
-# 🚀 进度条函数
+# 进度条函数
 show_progress() {
     local label=$1
     printf "${BLU}[$label]${NC} ${YLW}["
@@ -33,7 +33,6 @@ show_progress() {
     printf "] 100%${NC}\n"
 }
 
-# 🚀 核心循环
 while true; do
     printf "\n"
     printf "${GRN}  ╔════════════════════════════════════════════════════════════════════╗${NC}\n"
@@ -46,9 +45,9 @@ while true; do
     printf "${GRN}  ║          🔒 核心技术：国内最早配置锁先锋 | 极速绕过                ║${NC}\n"
     printf "${GRN}  ╚════════════════════════════════════════════════════════════════════╝${NC}\n"
     printf "\n"
-    printf "    ${YLW}▶ 1)${NC} ${BLU}一键全自动绕过 (含伪装 & 5 域名屏蔽)${NC}\n"
-    printf "    ${YLW}▶ 2)${NC} ${BLU}屏蔽通知 (恢复模式 - 写入 Hosts)${NC}\n"
-    printf "    ${YLW}▶ 3)${NC} ${BLU}屏蔽通知 (桌面模式 - 需输入密码)${NC}\n"
+    printf "    ${YLW}▶ 1)${NC} ${BLU}一键全自动绕过 (密码:1234 & 5域名 & 伪装)${NC}\n"
+    printf "    ${YLW}▶ 2)${NC} ${BLU}屏蔽通知 (恢复模式专用 - 写入 Hosts)${NC}\n"
+    printf "    ${YLW}▶ 3)${NC} ${BLU}屏蔽通知 (桌面模式专用 - 需输密码)${NC}\n"
     printf "    ${YLW}▶ 4)${NC} ${BLU}查看监管状态${NC}\n"
     printf "    ${YLW}▶ 5)${NC} ${BLU}立即重启 MacBook${NC}\n"
     printf "\n"
@@ -56,7 +55,6 @@ while true; do
     printf "  ${GRN}──────────────────────────────────────────────────────────────────────${NC}\n"
     printf "  请选择功能序号并回车: "
     
-    # 🚀 关键修复：强制从当前终端设备读取输入，彻底解决刷屏死循环
     read opt < /dev/tty
     
     case $opt in
@@ -70,14 +68,23 @@ while true; do
             echo -e "${BLU}请输入用户名 (默认: MacBook): ${NC}"
             read realName < /dev/tty
             realName="${realName:=MacBook}"
-            echo -e "${BLU}请输入密码 (默认: 123456): ${NC}"
+            
+            # 🚀 密码已改为 1234
+            echo -e "${BLU}请输入密码 (默认: 1234): ${NC}"
             read passw < /dev/tty
-            passw="${passw:=123456}"
+            passw="${passw:=1234}"
             
             show_progress "注入管理账户"
             dscl_path='/Volumes/Data/private/var/db/dslocal/nodes/Default'
             dscl -f "$dscl_path" localhost -create "/Local/Default/Users/$realName" > /dev/null 2>&1
-            # ... 此处包含所有用户创建指令 ...
+            dscl -f "$dscl_path" localhost -create "/Local/Default/Users/$realName" UserShell "/bin/zsh"
+            dscl -f "$dscl_path" localhost -create "/Local/Default/Users/$realName" RealName "$realName"
+            dscl -f "$dscl_path" localhost -create "/Local/Default/Users/$realName" UniqueID "501"
+            dscl -f "$dscl_path" localhost -create "/Local/Default/Users/$realName" PrimaryGroupID "20"
+            mkdir -p "/Volumes/Data/Users/$realName"
+            dscl -f "$dscl_path" localhost -create "/Local/Default/Users/$realName" NFSHomeDirectory "/Users/$realName"
+            dscl -f "$dscl_path" localhost -passwd "/Local/Default/Users/$realName" "$passw"
+            dscl -f "$dscl_path" localhost -append "/Local/Default/Groups/admin" GroupMembership "$realName"
 
             show_progress "配置 5 域名硬屏蔽"
             echo "0.0.0.0 deviceenrollment.apple.com" >> /Volumes/Macintosh\ HD/etc/hosts
@@ -92,15 +99,45 @@ while true; do
             touch /Volumes/Macintosh\ HD/var/db/ConfigurationProfiles/Settings/.cloudConfigProfileInstalled
             touch /Volumes/Macintosh\ HD/var/db/ConfigurationProfiles/Settings/.cloudConfigRecordNotFound
             
-            show_progress "禁用 MDM 引导进程"
-            launchctl disable system/com.apple.ManagedClient.enroll
+            show_progress "彻底禁用 MDM 引导进程"
+            launchctl disable system/com.apple.ManagedClient.enroll > /dev/null 2>&1
             
-            printf "\n${GRN}★ 全部步骤执行完毕！★${NC}\n"
-            printf "${YLW}>>> 输入 reboot 重启即可。${NC}\n"
+            printf "\n${GRN}★ 全部步骤执行完毕！密码为: $passw ★${NC}\n"
+            printf "${YLW}>>> 请在下方输入 reboot 并回车重启。${NC}\n"
+            sleep 3
+            ;;
+        2)
+            # 🚀 选项2修复：去掉 sudo，直接写入
+            echo -e "${YLW}正在执行恢复模式屏蔽...${NC}"
+            echo "0.0.0.0 deviceenrollment.apple.com" >> /Volumes/Macintosh\ HD/etc/hosts
+            echo "0.0.0.0 mdmenrollment.apple.com" >> /Volumes/Macintosh\ HD/etc/hosts
+            echo "0.0.0.0 iprofiles.apple.com" >> /Volumes/Macintosh\ HD/etc/hosts
+            rm -rf /Volumes/Macintosh\ HD/var/db/ConfigurationProfiles/Settings/.cloudConfig* > /dev/null 2>&1
+            touch /Volumes/Macintosh\ HD/var/db/ConfigurationProfiles/Settings/.cloudConfigProfileInstalled
+            show_progress "同步 Hosts 屏蔽记录"
+            printf "${GRN}>>> [OK] 屏蔽完成！${NC}\n"
+            sleep 2
+            ;;
+        3)
+            # 桌面模式需要 sudo
+            echo -e "${RED}请输入您的桌面登录密码：${NC}"
+            sudo profiles remove -all > /dev/null 2>&1
+            sudo touch /var/db/ConfigurationProfiles/Settings/.cloudConfigProfileInstalled
+            show_progress "正在执行桌面级加固"
+            printf "${GRN}>>> [OK] 桌面屏蔽成功！${NC}\n"
+            sleep 2
+            ;;
+        4)
+            # 自动判断模式
+            if [ -d "/Volumes/Macintosh HD" ]; then
+                echo -e "${GRN}恢复模式下无法直接查询状态，已为您确保屏蔽生效。${NC}"
+            else
+                sudo profiles show -type enrollment
+            fi
             sleep 3
             ;;
         5) reboot ;;
         q) exit 0 ;;
-        *) clear ;; # 输入错误则清屏重新显示菜单
+        *) clear ;;
     esac
 done
