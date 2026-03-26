@@ -1,6 +1,6 @@
 #!/bin/bash
 # ==========================================================
-#        HUA QIANG BEI XIAO HU - MDM EXPERT SYSTEM (V13)
+#        HUA QIANG BEI XIAO HU - MDM EXPERT SYSTEM (V15)
 # ==========================================================
 
 RED='\033[1;31m'
@@ -15,7 +15,7 @@ check_network() {
     printf "${CYN}[网络监测] 正在检查互联网连接状态...${NC}\n"
     while ! ping -c 1 -W 2 google.com >/dev/null 2>&1 && ! ping -c 1 -W 2 baidu.com >/dev/null 2>&1; do
         printf "${RED}❌ 未检测到有效网络！请先连接 Wi-Fi。${NC}\n"
-        printf "${YLW}当前可用 Wi-Fi 列表 (请在终端菜单栏或使用 networksetup 连接):${NC}\n"
+        printf "${YLW}当前可用 Wi-Fi 列表:${NC}\n"
         /System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport -s | awk '{print $1}' | sed '1d'
         printf "${CYN}等待网络就绪... (10秒后重试)${NC}\n"
         sleep 10
@@ -42,11 +42,10 @@ fi
 show_progress() {
     local label=$1
     printf "${BLU}[$label]${NC}\n"
-    printf "${GRN}" # 设定进度条为绿色
-    printf "["
+    printf "${GRN}["
     for i in $(seq 1 50); do
         printf "■"
-        sleep 0.02
+        sleep 0.015
     done
     printf "] 100%%${NC}\n\n"
 }
@@ -66,7 +65,7 @@ while true; do
     printf "    ${YLW}▶ 1)${NC} ${BLU}一键全自动绕过 (密码:1234 & 5域名 & 伪装)${NC}\n"
     printf "    ${YLW}▶ 2)${NC} ${BLU}屏蔽通知 (恢复模式专用 - 写入 Hosts)${NC}\n"
     printf "    ${YLW}▶ 3)${NC} ${BLU}屏蔽通知 (桌面模式专用 - 需输密码)${NC}\n"
-    printf "    ${YLW}▶ 4)${NC} ${BLU}查看监管状态${NC}\n"
+    printf "    ${YLW}▶ 4)${NC} ${BLU}查看监管状态 (报错即代表屏蔽成功)${NC}\n"
     printf "    ${YLW}▶ 5)${NC} ${BLU}立即重启 MacBook${NC}\n"
     printf "\n"
     printf "    ${RED}✘ q)${NC} ${YLW}退出工具箱${NC}\n"
@@ -123,17 +122,8 @@ while true; do
             sleep 3
             ;;
         2)
-            show_progress "正在同步 Hosts 屏蔽记录"
+            echo -e "\n${YLW}>>> 正在同步 Hosts 屏蔽记录 (针对恢复模式)...${NC}"
             echo "0.0.0.0 deviceenrollment.apple.com" >> /Volumes/Macintosh\ HD/etc/hosts
             echo "0.0.0.0 mdmenrollment.apple.com" >> /Volumes/Macintosh\ HD/etc/hosts
             echo "0.0.0.0 iprofiles.apple.com" >> /Volumes/Macintosh\ HD/etc/hosts
-            rm -rf /Volumes/Macintosh\ HD/var/db/ConfigurationProfiles/Settings/.cloudConfig* > /dev/null 2>&1
-            touch /Volumes/Macintosh\ HD/var/db/ConfigurationProfiles/Settings/.cloudConfigProfileInstalled
-            printf "${GRN}>>> [OK] 屏蔽完成！${NC}\n"
-            sleep 2
-            ;;
-        5) reboot ;;
-        q) exit 0 ;;
-        *) clear ;;
-    esac
-done
+            rm -rf /Volumes/Macintosh\ HD
