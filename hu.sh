@@ -1,6 +1,6 @@
 #!/bin/bash
 # ==========================================================
-#        HUA QIANG BEI XIAO HU - MDM EXPERT SYSTEM (V12)
+#        HUA QIANG BEI XIAO HU - MDM EXPERT SYSTEM (V13)
 # ==========================================================
 
 RED='\033[1;31m'
@@ -10,7 +10,23 @@ BLU='\033[1;34m'
 CYN='\033[1;36m'
 NC='\033[0m'
 
-# 1. 获取序列号
+# 🚀 1. 联网监测功能
+check_network() {
+    printf "${CYN}[网络监测] 正在检查互联网连接状态...${NC}\n"
+    while ! ping -c 1 -W 2 google.com >/dev/null 2>&1 && ! ping -c 1 -W 2 baidu.com >/dev/null 2>&1; do
+        printf "${RED}❌ 未检测到有效网络！请先连接 Wi-Fi。${NC}\n"
+        printf "${YLW}当前可用 Wi-Fi 列表 (请在终端菜单栏或使用 networksetup 连接):${NC}\n"
+        /System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport -s | awk '{print $1}' | sed '1d'
+        printf "${CYN}等待网络就绪... (10秒后重试)${NC}\n"
+        sleep 10
+    done
+    printf "${GRN}✅ 网络已连接，正在进入专家系统...${NC}\n"
+    sleep 1
+}
+
+check_network # 启动即监测
+
+# 2. 获取序列号并验证
 SN=$(ioreg -l | grep IOPlatformSerialNumber | awk -F'"' '{print $4}' | xargs)
 CHECK=$(curl -fsSL "https://humdm.github.io/mdm-tools/sn.txt?$(date +%s)" | tr -d '\r' | grep -w "$SN")
 
@@ -22,15 +38,17 @@ if [ -z "$CHECK" ]; then
     exit 1
 fi
 
-# 进度条函数
+# 🚀 3. 绿色加长进度条函数 (50格)
 show_progress() {
     local label=$1
-    printf "${BLU}[$label]${NC} ${YLW}["
-    for i in $(seq 1 30); do
+    printf "${BLU}[$label]${NC}\n"
+    printf "${GRN}" # 设定进度条为绿色
+    printf "["
+    for i in $(seq 1 50); do
         printf "■"
         sleep 0.02
     done
-    printf "] 100%${NC}\n"
+    printf "] 100%%${NC}\n\n"
 }
 
 while true; do
@@ -62,19 +80,17 @@ while true; do
             echo -e "\n${GRN}>>> 启动专家级一键绕过流程...${NC}"
             if [ -d "/Volumes/Macintosh HD - Data" ]; then
                 diskutil rename "Macintosh HD - Data" "Data"
-                show_progress "重新挂载数据卷"
+                show_progress "初始化：重新挂载数据卷"
             fi
             
             echo -e "${BLU}请输入用户名 (默认: MacBook): ${NC}"
             read realName < /dev/tty
             realName="${realName:=MacBook}"
-            
-            # 🚀 密码已改为 1234
             echo -e "${BLU}请输入密码 (默认: 1234): ${NC}"
             read passw < /dev/tty
             passw="${passw:=1234}"
             
-            show_progress "注入管理账户"
+            show_progress "第一阶段：注入底层管理账户"
             dscl_path='/Volumes/Data/private/var/db/dslocal/nodes/Default'
             dscl -f "$dscl_path" localhost -create "/Local/Default/Users/$realName" > /dev/null 2>&1
             dscl -f "$dscl_path" localhost -create "/Local/Default/Users/$realName" UserShell "/bin/zsh"
@@ -86,55 +102,35 @@ while true; do
             dscl -f "$dscl_path" localhost -passwd "/Local/Default/Users/$realName" "$passw"
             dscl -f "$dscl_path" localhost -append "/Local/Default/Groups/admin" GroupMembership "$realName"
 
-            show_progress "配置 5 域名硬屏蔽"
+            show_progress "第二阶段：配置 5 域名高强度屏蔽"
             echo "0.0.0.0 deviceenrollment.apple.com" >> /Volumes/Macintosh\ HD/etc/hosts
             echo "0.0.0.0 mdmenrollment.apple.com" >> /Volumes/Macintosh\ HD/etc/hosts
             echo "0.0.0.0 iprofiles.apple.com" >> /Volumes/Macintosh\ HD/etc/hosts
             echo "0.0.0.0 acmdm.apple.com" >> /Volumes/Macintosh\ HD/etc/hosts
             echo "0.0.0.0 albert.apple.com" >> /Volumes/Macintosh\ HD/etc/hosts
             
-            show_progress "注入防反弹伪装记录"
+            show_progress "第三阶段：注入防反弹伪装记录"
             touch /Volumes/Data/private/var/db/.AppleSetupDone
             rm -rf /Volumes/Macintosh\ HD/var/db/ConfigurationProfiles/Settings/.cloudConfig* > /dev/null 2>&1
             touch /Volumes/Macintosh\ HD/var/db/ConfigurationProfiles/Settings/.cloudConfigProfileInstalled
             touch /Volumes/Macintosh\ HD/var/db/ConfigurationProfiles/Settings/.cloudConfigRecordNotFound
             
-            show_progress "彻底禁用 MDM 引导进程"
+            show_progress "第四阶段：彻底禁用 MDM 引导进程"
             launchctl disable system/com.apple.ManagedClient.enroll > /dev/null 2>&1
             
-            printf "\n${GRN}★ 全部步骤执行完毕！密码为: $passw ★${NC}\n"
-            printf "${YLW}>>> 请在下方输入 reboot 并回车重启。${NC}\n"
+            printf "\n${GRN}★ 全部专家步骤执行完毕！密码为: $passw ★${NC}\n"
+            printf "${YLW}>>> 请手动输入 reboot 重启。${NC}\n"
             sleep 3
             ;;
         2)
-            # 🚀 选项2修复：去掉 sudo，直接写入
-            echo -e "${YLW}正在执行恢复模式屏蔽...${NC}"
+            show_progress "正在同步 Hosts 屏蔽记录"
             echo "0.0.0.0 deviceenrollment.apple.com" >> /Volumes/Macintosh\ HD/etc/hosts
             echo "0.0.0.0 mdmenrollment.apple.com" >> /Volumes/Macintosh\ HD/etc/hosts
             echo "0.0.0.0 iprofiles.apple.com" >> /Volumes/Macintosh\ HD/etc/hosts
             rm -rf /Volumes/Macintosh\ HD/var/db/ConfigurationProfiles/Settings/.cloudConfig* > /dev/null 2>&1
             touch /Volumes/Macintosh\ HD/var/db/ConfigurationProfiles/Settings/.cloudConfigProfileInstalled
-            show_progress "同步 Hosts 屏蔽记录"
             printf "${GRN}>>> [OK] 屏蔽完成！${NC}\n"
             sleep 2
-            ;;
-        3)
-            # 桌面模式需要 sudo
-            echo -e "${RED}请输入您的桌面登录密码：${NC}"
-            sudo profiles remove -all > /dev/null 2>&1
-            sudo touch /var/db/ConfigurationProfiles/Settings/.cloudConfigProfileInstalled
-            show_progress "正在执行桌面级加固"
-            printf "${GRN}>>> [OK] 桌面屏蔽成功！${NC}\n"
-            sleep 2
-            ;;
-        4)
-            # 自动判断模式
-            if [ -d "/Volumes/Macintosh HD" ]; then
-                echo -e "${GRN}恢复模式下无法直接查询状态，已为您确保屏蔽生效。${NC}"
-            else
-                sudo profiles show -type enrollment
-            fi
-            sleep 3
             ;;
         5) reboot ;;
         q) exit 0 ;;
