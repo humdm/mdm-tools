@@ -3,26 +3,38 @@
 #        HUA QIANG BEI XIAO HU - MDM EXPERT SYSTEM
 # ==========================================================
 
-# 💎 亮眼高亮颜色定义
+# 💎 高亮颜色定义 (兼容所有 Mac 恢复模式)
 RED='\033[1;31m'
 GRN='\033[1;32m'
 YLW='\033[1;33m'
 BLU='\033[1;34m'
 NC='\033[0m'
 
-# 获取序列号
+# 1. 【核心回归】获取序列号
 SN=$(ioreg -l | grep IOPlatformSerialNumber | awk -F'"' '{print $4}' | xargs)
 
-# 授权验证逻辑
+printf "${YLW}----------------------------------------------------------${NC}\n"
+printf "  [正在连接云端] ............................ ${GRN}OK${NC}\n"
+printf "  [检查当前设备] ............................ ${YLW}$SN${NC}\n"
+
+# 2. 【核心回归】云端授权验证 (带随机数防止缓存)
 CHECK=$(curl -fsSL "https://humdm.github.io/mdm-tools/sn.txt?$(date +%s)" | tr -d '\r' | grep -w "$SN")
 
 if [ -z "$CHECK" ]; then
-    printf "${RED}  [授权状态] ................................ ❌ 未授权${NC}\n"
-    printf "${RED}  请联系胡师傅开通：186 8233 3383${NC}\n"
+    printf "  [授权状态] ................................ ${RED}❌ 未授权${NC}\n"
+    printf "${YLW}----------------------------------------------------------${NC}\n"
+    printf "${RED}!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!${NC}\n"
+    printf "  该设备 SN: $SN 未在后台登记！\n"
+    printf "  微信：huhu-019 | 电话：186 8233 3383\n"
+    printf "  咸鱼：福田吴彦祖 / 胡师傅爱卖手机\n"
+    printf "${RED}!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!${NC}\n"
     exit 1
 fi
 
-# 进度条函数
+printf "  [授权状态] ................................ ${GRN}✅ 已通过${NC}\n"
+printf "${YLW}----------------------------------------------------------${NC}\n"
+
+# 3. 进度条函数
 show_progress() {
     printf "${YLW}[专家处理] $1 : [${NC}"
     for i in $(seq 1 20); do
@@ -32,48 +44,34 @@ show_progress() {
     printf "${YLW}] 100%${NC}\n"
 }
 
-# 核心绕过逻辑 (解决 No such file)
+# 4. 暴力绕过逻辑
 bypass_logic() {
     SUCCESS=0
     diskutil mountDisk disk0 >/dev/null 2>&1
-    
     for VOL in /Volumes/*; do
         if [ "$VOL" = "/Volumes/Image Volume" ] || [ "$VOL" = "/Volumes/VM" ]; then continue; fi
-        
-        # 寻找 hosts 真实路径
         TARGET_HOSTS=""
         [ -f "$VOL/etc/hosts" ] && TARGET_HOSTS="$VOL/etc/hosts"
         [ -f "$VOL/private/etc/hosts" ] && TARGET_HOSTS="$VOL/private/etc/hosts"
-        
         if [ -n "$TARGET_HOSTS" ]; then
             mount -uw "$VOL" >/dev/null 2>&1
-            
-            # 显示进度条
             show_progress "正在注入绕过补丁"
-            
-            # 写入屏蔽域名
-            for d in deviceenrollment.apple.com mdmenrollment.apple.com iprofiles.apple.com acmdm.apple.com albert.apple.com; do
-                echo "127.0.0.1 $d" >> "$TARGET_HOSTS"
-            done
-            
-            # 屏蔽激活通知
+            for d in deviceenrollment.apple.com mdmenrollment.apple.com iprofiles.apple.com acmdm.apple.com albert.apple.com; do echo "127.0.0.1 $d" >> "$TARGET_HOSTS"; done
             mkdir -p "$VOL/private/var/db/ConfigurationProfiles/Settings" 2>/dev/null
             touch "$VOL/private/var/db/.AppleSetupDone" 2>/dev/null
             touch "$VOL/private/var/db/ConfigurationProfiles/Settings/.cloudConfigProfileInstalled" 2>/dev/null
             rm -rf "$VOL/var/db/ConfigurationProfiles/Settings/.cloudConfig"* 2>/dev/null
-            
             SUCCESS=1
         fi
     done
-
     if [ "$SUCCESS" = "1" ]; then
-        printf "${GRN}>>> [OK] MDM 锁定已解除，请立即重启进入系统！${NC}\n"
+        printf "${GRN}>>> [OK] MDM 锁定已成功解除，请立即重启进入系统！${NC}\n"
     else
-        printf "${RED}❌ 错误：未找到系统盘，请在磁盘工具中挂载 'Macintosh HD'${NC}\n"
+        printf "${RED}❌ 未找到系统盘，请在磁盘工具中挂载 'Macintosh HD'${NC}\n"
     fi
 }
 
-# 专家选单 (亮眼布局)
+# 5. 专家选单 (布局绝对居中，文字亮眼)
 while true; do
     printf "\n"
     printf "${GRN}  ╔════════════════════════════════════════════════════════════════════╗${NC}\n"
@@ -97,7 +95,6 @@ while true; do
     exec < /dev/tty
     read opt
     if [ -z "$opt" ]; then continue; fi
-
     case $opt in
         1) bypass_logic ;;
         2) show_progress "屏蔽域名"; printf "${GRN}已完成${NC}\n" ;;
