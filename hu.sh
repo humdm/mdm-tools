@@ -1,6 +1,6 @@
 #!/bin/bash
 # ==========================================================
-#        HUA QIANG BEI XIAO HU - MDM EXPERT SYSTEM (V16)
+#        HUA QIANG BEI XIAO HU - MDM EXPERT SYSTEM (V17)
 # ==========================================================
 
 RED='\033[1;31m'
@@ -23,12 +23,18 @@ check_network() {
     printf "${GRN}✅ 网络已连接，正在进入专家系统...${NC}\n"
 }
 
-# 2. 磁盘自适应探测
+# 2. 磁盘精准探测 (针对 Intel 读不到盘优化)
 find_disks() {
-    SYS_PATH=$(df | grep -E "Macintosh HD$" | awk '{print $6}')
-    DATA_PATH=$(df | grep -E "Macintosh HD - Data$|Data$" | awk '{print $6}')
+    # 模糊搜索系统盘和数据盘挂载点
+    SYS_PATH=$(df | grep -v "Data" | grep "/Volumes/" | head -n 1 | awk '{for(i=6;i<=NF;i++) printf $i" "; print ""}' | xargs)
+    DATA_PATH=$(df | grep "Data" | grep "/Volumes/" | head -n 1 | awk '{for(i=6;i<=NF;i++) printf $i" "; print ""}' | xargs)
+
+    # 兜底方案
     [ -z "$SYS_PATH" ] && SYS_PATH="/Volumes/Macintosh HD"
-    [ -z "$DATA_PATH" ] && DATA_PATH="/Volumes/Data"
+    [ -z "$DATA_PATH" ] && DATA_PATH="/Volumes/Macintosh HD - Data"
+    
+    # 如果 Data 盘不存在，尝试用普通磁盘名
+    [ ! -d "$DATA_PATH" ] && DATA_PATH="$SYS_PATH"
 }
 
 # 3. 初始化验证
@@ -54,7 +60,7 @@ show_progress() {
     printf "] 100%%${NC}\n\n"
 }
 
-# 🚀 核心菜单循环 (确保此处结构完整)
+# 🚀 核心菜单循环
 while true; do
     printf "\n"
     printf "${GRN}  ╔════════════════════════════════════════════════════════════════════╗${NC}\n"
@@ -82,11 +88,7 @@ while true; do
     case $opt in
         1) 
             find_disks
-            echo -e "\n${GRN}>>> 启动全兼容绕过流程...${NC}"
-            if [ -d "$DATA_PATH" ]; then
-                diskutil rename "$DATA_PATH" "Data" > /dev/null 2>&1
-                DATA_PATH="/Volumes/Data"
-            fi
+            echo -e "\n${GRN}>>> 启动全系列适配流程...${NC}"
             
             echo -e "${BLU}请输入用户名 (默认: MacBook): ${NC}"
             read realName < /dev/tty
@@ -96,55 +98,46 @@ while true; do
             passw="${passw:=1234}"
             
             show_progress "第一阶段：注入底层管理账户"
-            dscl -f "$DATA_PATH/private/var/db/dslocal/nodes/Default" localhost -create "/Local/Default/Users/$realName" > /dev/null 2>&1
-            dscl -f "$DATA_PATH/private/var/db/dslocal/nodes/Default" localhost -passwd "/Local/Default/Users/$realName" "$passw"
-            dscl -f "$DATA_PATH/private/var/db/dslocal/nodes/Default" localhost -append "/Local/Default/Groups/admin" GroupMembership "$realName"
+            # 兼容不同系统的 dscl 路径
+            DS_DB="$DATA_PATH/private/var/db/dslocal/nodes/Default"
+            if [ -d "$DS_DB" ]; then
+                dscl -f "$DS_DB" localhost -create "/Local/Default/Users/$realName" > /dev/null 2>&1
+                dscl -f "$DS_DB" localhost -passwd "/Local/Default/Users/$realName" "$passw"
+                dscl -f "$DS_DB" localhost -append "/Local/Default/Groups/admin" GroupMembership "$realName"
+            fi
 
             show_progress "第二阶段：配置 5 域名高强度屏蔽"
-            chflags nouchg "$SYS_PATH/etc/hosts" > /dev/null 2>&1
-            echo "0.0.0.0 deviceenrollment.apple.com" >> "$SYS_PATH/etc/hosts"
-            echo "0.0.0.0 mdmenrollment.apple.com" >> "$SYS_PATH/etc/hosts"
-            echo "0.0.0.0 iprofiles.apple.com" >> "$SYS_PATH/etc/hosts"
-            echo "0.0.0.0 acmdm.apple.com" >> "$SYS_PATH/etc/hosts"
-            echo "0.0.0.0 albert.apple.com" >> "$SYS_PATH/etc/hosts"
+            if [ -d "$SYS_PATH/etc" ]; then
+                chflags nouchg "$SYS_PATH/etc/hosts" > /dev/null 2>&1
+                printf "0.0.0.0 deviceenrollment.apple.com\n0.0.0.0 mdmenrollment.apple.com\n0.0.0.0 iprofiles.apple.com\n0.0.0.0 acmdm.apple.com\n0.0.0.0 albert.apple.com\n" >> "$SYS_PATH/etc/hosts"
+            fi
             
             show_progress "第三阶段：注入防反弹伪装记录"
-            touch "$DATA_PATH/private/var/db/.AppleSetupDone"
-            rm -rf "$SYS_PATH/var/db/ConfigurationProfiles/Settings/.cloudConfig*" > /dev/null 2>&1
-            touch "$SYS_PATH/var/db/ConfigurationProfiles/Settings/.cloudConfigProfileInstalled"
+            touch "$DATA_PATH/private/var/db/.AppleSetupDone" 2>/dev/null
+            touch "$SYS_PATH/var/db/ConfigurationProfiles/Settings/.cloudConfigProfileInstalled" 2>/dev/null
             
             show_progress "第四阶段：彻底禁用 MDM 引导进程"
             launchctl disable system/com.apple.ManagedClient.enroll > /dev/null 2>&1
             
-            printf "\n${GRN}★ 全部步骤执行完毕！密码为: $passw ★${NC}\n"
+            printf "\n${GRN}★ 绕过完毕！密码为: $passw ★${NC}\n"
             sleep 2
             ;;
         2)
             find_disks
             show_progress "正在同步 Hosts 屏蔽记录"
-            echo "0.0.0.0 deviceenrollment.apple.com" >> "$SYS_PATH/etc/hosts"
-            echo "0.0.0.0 mdmenrollment.apple.com" >> "$SYS_PATH/etc/hosts"
-            echo "0.0.0.0 iprofiles.apple.com" >> "$SYS_PATH/etc/hosts"
-            touch "$SYS_PATH/var/db/ConfigurationProfiles/Settings/.cloudConfigProfileInstalled"
+            printf "0.0.0.0 deviceenrollment.apple.com\n0.0.0.0 mdmenrollment.apple.com\n0.0.0.0 iprofiles.apple.com\n" >> "$SYS_PATH/etc/hosts"
             printf "${GRN}>>> [OK] 屏蔽完成！${NC}\n"
             sleep 2
             ;;
         3)
-            echo -e "\n${RED}⚠️  注意：提示 Password 时输入开机密码并回车${NC}"
+            echo -e "\n${RED}⚠️  提示 Password 时请输入开机密码并回车${NC}"
             if sudo -v; then
-                show_progress "清理系统残留描述符"
+                show_progress "桌面加固中..."
                 sudo profiles remove -all > /dev/null 2>&1
-                show_progress "注入桌面级防反弹伪装"
                 sudo touch /var/db/ConfigurationProfiles/Settings/.cloudConfigProfileInstalled > /dev/null 2>&1
-                show_progress "封锁后台管理进程"
-                sudo launchctl disable system/com.apple.ManagedClient.enroll > /dev/null 2>&1
                 printf "${GRN}★ 桌面加固完成！★${NC}\n"
             fi
             sleep 2
-            ;;
-        4)
-            sudo profiles show -type enrollment
-            sleep 3
             ;;
         5) reboot ;;
         q) exit 0 ;;
