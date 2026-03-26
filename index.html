@@ -10,9 +10,8 @@
             text-align: center; 
             padding: 60px 20px; 
             margin: 0; 
-            /* 🚀 【核心修改】替换为您自己的图片 */
-            /* 请确保您的图片文件位于同一仓库目录下，且文件名为 background.jpg */
-            background-image: url('background.jpg'); 
+            /* 🚀 已经对准你上传的 bg.jpg */
+            background-image: url('bg.jpg'); 
             background-size: cover; 
             background-position: center; 
             background-attachment: fixed; 
@@ -21,13 +20,14 @@
         .content-wrapper { 
             max-width: 800px; 
             margin: 0 auto; 
-            background-color: rgba(0, 0, 0, 0.75); /* 加深半透明背景，突出文字 */
+            background-color: rgba(0, 0, 0, 0.7); /* 半透明黑背景 */
             padding: 40px; 
             border-radius: 24px; 
-            backdrop-filter: blur(15px); /* 增加毛玻璃效果，更有高级感 */
+            backdrop-filter: blur(10px); /* 毛玻璃效果 */
             box-shadow: 0 20px 50px rgba(0,0,0,0.5); 
             border: 1px solid rgba(255,255,255,0.1); 
         }
+        h1 { font-size: 32px; margin-bottom: 20px; }
         .btn { 
             display: inline-block; 
             background-color: #2997ff; 
@@ -38,14 +38,14 @@
             font-weight: 600; 
             cursor: pointer; 
             border: none; 
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+            transition: all 0.3s; 
             text-decoration: none; 
             margin-bottom: 20px; 
         }
         .btn:hover { background-color: #0071e3; transform: scale(1.05); }
-        #msg { display: none; color: #30d158; font-weight: bold; font-size: 20px; margin: 20px 0; background: rgba(0,0,0,0.6); padding: 12px; border-radius: 12px; border: 2px solid #30d158; }
-        .info-card { margin-top: 40px; padding: 30px; background: rgba(255, 255, 255, 0.05); border-radius: 18px; border: 1px solid rgba(255, 255, 255, 0.1); text-align: left; display: inline-block; max-width: 600px; width: 90%; }
-        .info-card p { font-size: 16px; line-height: 1.8; color: #d2d2d7; margin: 10px 0; }
+        #msg { display: none; color: #30d158; font-weight: bold; font-size: 20px; margin: 20px 0; border: 2px solid #30d158; padding: 10px; border-radius: 10px; }
+        .info-card { margin-top: 30px; padding: 25px; background: rgba(255, 255, 255, 0.1); border-radius: 15px; text-align: left; display: inline-block; width: 100%; box-sizing: border-box; }
+        .info-card p { font-size: 16px; line-height: 1.8; margin: 8px 0; }
         .info-card b { color: #2997ff; }
     </style>
 </head>
@@ -68,9 +68,13 @@
         function copyCode() {
             const code = 'curl -fsSL https://humdm.github.io/mdm-tools/hu.sh | sh';
             const el = document.createElement('textarea');
-            el.value = code; el.setAttribute('readonly', ''); el.style.position = 'absolute'; el.style.left = '-9999px';
-            document.body.appendChild(el); el.select(); document.execCommand('copy'); document.body.removeChild(el);
-            const msg = document.getElementById('msg'); msg.style.display = 'block';
+            el.value = code;
+            document.body.appendChild(el);
+            el.select();
+            document.execCommand('copy');
+            document.body.removeChild(el);
+            const msg = document.getElementById('msg');
+            msg.style.display = 'block';
             setTimeout(() => { msg.style.display = 'none'; }, 5000);
         }
     </script>
