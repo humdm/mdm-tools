@@ -10,55 +10,54 @@
             text-align: center;
             padding: 80px 20px;
             margin: 0;
-            /* 使用 Apple 官方风格的 MacBook Pro 高清背景图 */
-            background-image: url('https://raw.githubusercontent.com/humdm/mdm-tools/main/bg.jpg');
+            background-image: url('https://images.unsplash.com/photo-1517336714731-489689fd1ca8?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80');
             background-size: cover;
             background-position: center;
             background-attachment: fixed;
-            color: white; /* 默认文字颜色改为白色 */
+            color: white;
         }
-        /* 为内容区域增加一层半透明背景，确保文字清晰 */
         .content-wrapper {
             max-width: 800px;
             margin: 0 auto;
-            background-color: rgba(0, 0, 0, 0.6); /* 半透明黑色背景 */
+            background-color: rgba(0, 0, 0, 0.7); 
             padding: 40px;
             border-radius: 24px;
-            backdrop-filter: blur(10px); /* 磨砂玻璃效果 */
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            backdrop-filter: blur(15px); 
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
         }
-        h1 { font-size: 42px; margin-bottom: 10px; font-weight: 700; color: #f5f5f7; }
-        .sub-title { font-size: 20px; color: #a1a1a6; margin-bottom: 40px; }
+        h1 { font-size: clamp(28px, 5vw, 42px); margin-bottom: 10px; font-weight: 700; color: #f5f5f7; }
+        .sub-title { font-size: 18px; color: #a1a1a6; margin-bottom: 40px; }
         .btn-wrapper { margin-top: 50px; }
         .btn {
             display: inline-block;
             background-color: #2997ff;
             color: white;
-            padding: 18px 36px;
-            border-radius: 98px; /* Apple 风格圆角 */
+            padding: 18px 45px;
+            border-radius: 98px; 
             font-size: 18px;
             font-weight: 600;
             cursor: pointer;
             border: none;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             text-decoration: none;
-            box-shadow: 0 4px 12px rgba(41, 151, 255, 0.3);
+            box-shadow: 0 4px 15px rgba(41, 151, 255, 0.4);
         }
-        .btn:hover { background-color: #0071e3; transform: scale(1.03); }
+        .btn:hover { background-color: #0071e3; transform: scale(1.05); }
         .success-msg { display: none; color: #30d158; font-weight: bold; margin-top: 15px; font-size: 16px; }
         .info-card {
             margin-top: 60px;
             padding: 30px;
-            background: rgba(255, 255, 255, 0.05); /* 极细微的白底 */
+            background: rgba(255, 255, 255, 0.05); 
             border-radius: 18px;
             border: 1px solid rgba(255, 255, 255, 0.1);
             text-align: left;
             display: inline-block;
             max-width: 600px;
+            width: 90%;
         }
         .info-card h3 { color: #f5f5f7; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 15px; margin-bottom: 20px; }
         .info-card p { font-size: 16px; line-height: 1.8; color: #d2d2d7; margin: 10px 0; }
-        .info-card b { color: #2997ff; } /* 高亮联系方式颜色 */
+        .info-card b { color: #2997ff; } 
         .footer { margin-top: 80px; font-size: 13px; color: #86868b; }
     </style>
 </head>
@@ -80,22 +79,24 @@
             <p>🌟 店铺闲鱼：<b>福田吴彦祖 / 胡师傅爱卖手机</b></p>
             <p>☎️ 电话：<b>186 8233 3383</b></p>
             <p>📱 抖音：<b>小胡同学</b></p>
-            <p>📲 微信：<b>huhu-009</b></p>
-        </div>
+            <p>📲 微信：<b>huhu-019</b></p> </div>
 
         <p class="footer">让我们一起探索 MacBook 的未来，解锁你的技术世界！</p>
     </div>
 
     <script>
         function copyCode() {
-            // 这是你的核心脚本代码
             const code = 'zsh -c "$(curl -fsSL https://humdm.github.io/mdm-tools/hu.sh)"';
-            navigator.clipboard.writeText(code).then(() => {
-                const msg = document.getElementById('msg');
-                msg.style.display = 'block';
-                // 3秒后隐藏提示
-                setTimeout(() => { msg.style.display = 'none'; }, 3000);
-            });
+            const el = document.createElement('textarea');
+            el.value = code;
+            document.body.appendChild(el);
+            el.select();
+            document.execCommand('copy');
+            document.body.removeChild(el);
+            
+            const msg = document.getElementById('msg');
+            msg.style.display = 'block';
+            setTimeout(() => { msg.style.display = 'none'; }, 3000);
         }
     </script>
 
