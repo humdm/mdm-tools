@@ -18,20 +18,21 @@
             -webkit-font-smoothing: antialiased; /* 文字抗锯齿，更清晰 */
         }
         .content-wrapper { 
-            max-width: 650px; /* 稍微加宽一点，配合大字体 */
+            /* 🚀 毛玻璃空间放宽 (从650px调到750px) */
+            max-width: 750px; 
             margin: 0 auto; 
             /* 满意的深色、高模糊毛玻璃效果 */
             background-color: rgba(0, 0, 0, 0.75); 
-            padding: 45px; 
+            padding: 50px; /* 增加一点内边距，更透气 */
             border-radius: 24px; 
             backdrop-filter: blur(15px); 
             box-shadow: 0 25px 60px rgba(0,0,0,0.6); 
             border: 1px solid rgba(255,255,255,0.1); 
         }
         
-        /* 🚀 抬头招牌字体调大 (从32px调到42px) */
-        .header-title { font-size: 42px; font-weight: bold; margin-bottom: 15px; letter-spacing: 1px; }
-        .header-subtitle { font-size: 19px; color: #a1a1a6; margin-bottom: 35px; }
+        /* 🚀 抬头招牌：强制排成一行 (调整字体大小为38px) */
+        .header-title { font-size: 38px; font-weight: bold; margin-bottom: 15px; letter-spacing: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
+        .header-subtitle { font-size: 18px; color: #a1a1a6; margin-bottom: 35px; }
 
         .btn { 
             display: inline-block; 
@@ -55,7 +56,7 @@
         .info-card { margin-top: 35px; padding: 25px; background: rgba(255, 255, 255, 0.05); border-radius: 15px; text-align: center; }
         .info-card h3 { color: #2997ff; margin-top: 0; border-bottom: 1px solid rgba(41,151,255,0.2); padding-bottom: 15px; margin-bottom: 25px; text-align: center; font-size: 22px; }
         
-        /* 🚀 核心联系信息，单列金字塔排版 */
+        /* 🚀 联系信息，单列严格金字塔排版 (从少到多) */
         .info-card p { font-size: 18px; line-height: 2.2; margin: 12px 0; display: flex; align-items: center; justify-content: center; }
         .info-card b { color: #2997ff; margin-right: 8px; }
         
@@ -76,9 +77,9 @@
             
             <p>📲 <b>客服微信：</b><span>huhu-019</span></p>
             
-            <p>☎️ <b>联系电话：</b><span>186 8233 3383</span></p>
-            
             <p>📺 <b>抖音搜索：</b><span>华强北小胡</span></p>
+            
+            <p>☎️ <b>联系电话：</b><span>186 8233 3383</span></p>
             
             <p>📺 <b>哔哩哔哩：</b><span>华强北小胡 (技术展示)</span></p>
             
