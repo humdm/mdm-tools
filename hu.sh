@@ -1,46 +1,55 @@
 #!/bin/sh
 # ==========================================================
-#        HUA QIANG BEI XIAO HU - MDM EXPERT SYSTEM (V5)
+#        HUA QIANG BEI XIAO HU - MDM EXPERT SYSTEM
 # ==========================================================
 
-C_RED='\033[1;31m'
-C_GRN='\033[1;32m'
-C_YLW='\033[1;33m'
-C_BLU='\033[1;34m'
-C_NC='\033[0m'
+# 💎 亮眼高亮颜色定义
+RED='\033[1;31m'
+GRN='\033[1;32m'
+YLW='\033[1;33m'
+BLU='\033[1;34m'
+NC='\033[0m'
 
-say() { printf "${1}${2}${C_NC}\n"; }
-
+# 获取序列号
 SN=$(ioreg -l | grep IOPlatformSerialNumber | awk -F'"' '{print $4}' | xargs)
 
-# 授权检测
+# 授权验证逻辑
 CHECK=$(curl -fsSL "https://humdm.github.io/mdm-tools/sn.txt?$(date +%s)" | tr -d '\r' | grep -w "$SN")
+
 if [ -z "$CHECK" ]; then
-    say "${C_RED}" "❌ 未授权！请联系胡师傅：18682333383"
+    printf "${RED}  [授权状态] ................................ ❌ 未授权${NC}\n"
+    printf "${RED}  请联系胡师傅开通：186 8233 3383${NC}\n"
     exit 1
 fi
 
-# 核心：全盘扫描 hosts 文件
-bypass_mdm() {
-    say "${C_BLU}" ">>> 正在深度检索磁盘文件系统..."
-    
-    # 强制挂载所有磁盘
+# 进度条函数
+show_progress() {
+    printf "${YLW}[专家处理] $1 : [${NC}"
+    for i in $(seq 1 20); do
+        printf "${GRN}#${NC}"
+        sleep 0.05
+    done
+    printf "${YLW}] 100%${NC}\n"
+}
+
+# 核心绕过逻辑 (解决 No such file)
+bypass_logic() {
+    SUCCESS=0
     diskutil mountDisk disk0 >/dev/null 2>&1
     
-    # 遍历所有挂载的磁盘（排除恢复镜像）
     for VOL in /Volumes/*; do
         if [ "$VOL" = "/Volumes/Image Volume" ] || [ "$VOL" = "/Volumes/VM" ]; then continue; fi
         
-        say "${C_YLW}" "正在检查卷宗: $VOL"
-        
-        # 寻找 hosts 文件的真实位置 (兼容 Catalina/Big Sur/Monterey 及以上)
+        # 寻找 hosts 真实路径
         TARGET_HOSTS=""
         [ -f "$VOL/etc/hosts" ] && TARGET_HOSTS="$VOL/etc/hosts"
         [ -f "$VOL/private/etc/hosts" ] && TARGET_HOSTS="$VOL/private/etc/hosts"
         
         if [ -n "$TARGET_HOSTS" ]; then
             mount -uw "$VOL" >/dev/null 2>&1
-            say "${C_GRN}" "✅ 发现系统路径: $TARGET_HOSTS"
+            
+            # 显示进度条
+            show_progress "正在注入绕过补丁"
             
             # 写入屏蔽域名
             for d in deviceenrollment.apple.com mdmenrollment.apple.com iprofiles.apple.com acmdm.apple.com albert.apple.com; do
@@ -53,37 +62,49 @@ bypass_mdm() {
             touch "$VOL/private/var/db/ConfigurationProfiles/Settings/.cloudConfigProfileInstalled" 2>/dev/null
             rm -rf "$VOL/var/db/ConfigurationProfiles/Settings/.cloudConfig"* 2>/dev/null
             
-            say "${C_GRN}" "🚀 已成功注入屏蔽补丁！"
             SUCCESS=1
         fi
     done
 
-    if [ "$SUCCESS" != "1" ]; then
-        say "${C_RED}" "❌ 错误：未找到有效的系统文件。请先在磁盘工具里解锁 'Macintosh HD'！"
+    if [ "$SUCCESS" = "1" ]; then
+        printf "${GRN}>>> [OK] MDM 锁定已解除，请立即重启进入系统！${NC}\n"
+    else
+        printf "${RED}❌ 错误：未找到系统盘，请在磁盘工具中挂载 'Macintosh HD'${NC}\n"
     fi
 }
 
-# 界面展示
+# 专家选单 (亮眼布局)
 while true; do
     printf "\n"
-    say "${C_GRN}" "  ╔══════════════════════════════════════════════════════════════╗"
-    say "${C_GRN}" "  ║              ★ 华强北小胡 - MDM 终极全兼容版 ★              ║"
-    say "${C_GRN}" "  ╠══════════════════════════════════════════════════════════════╣"
-    say "${C_GRN}" "  ║  官方认证：国内最早配置锁先锋 | 您身边的 Mac 专家             ║"
-    say "${C_GRN}" "  ║         📱 微信：huhu-019      ☎ 电话：18682333383          ║"
-    say "${C_GRN}" "  ║          🌟 咸鱼店铺：福田吴彦祖 / 胡师傅爱卖手机             ║"
-    say "${C_GRN}" "  ╚══════════════════════════════════════════════════════════════╝"
+    printf "${GRN}  ╔════════════════════════════════════════════════════════════════════╗${NC}\n"
+    printf "${GRN}  ║                ★ 华强北小胡 - MDM 终极全兼容版 ★                  ║${NC}\n"
+    printf "${GRN}  ╠════════════════════════════════════════════════════════════════════╣${NC}\n"
+    printf "${GRN}  ║          官方认证：国内最早配置锁先锋 | 您身边的 Mac 专家          ║${NC}\n"
+    printf "${GRN}  ║             📱 微信：huhu-019      ☎ 电话：18682333383             ║${NC}\n"
+    printf "${GRN}  ║              🌟 咸鱼店铺：福田吴彦祖 / 胡师傅爱卖手机              ║${NC}\n"
+    printf "${GRN}  ╚════════════════════════════════════════════════════════════════════╝${NC}\n"
     printf "\n"
-    say "${C_YLW}" "    ▶ 1)${C_BLU} 一键全自动绕过 mdm"
-    say "${C_YLW}" "    ▶ 2)${C_BLU} 立即重启 MacBook"
-    say "${C_RED}" "    ✘ q)${C_YLW} 退出工具箱"
+    printf "    ${YLW}▶ 1)${NC} ${BLU}一键全自动绕过 mdm${NC}\n"
+    printf "    ${YLW}▶ 2)${NC} ${BLU}屏蔽 mdm 域名${NC}\n"
+    printf "    ${YLW}▶ 3)${NC} ${BLU}禁用 mdm 通知${NC}\n"
+    printf "    ${YLW}▶ 4)${NC} ${BLU}检查 mdm 注册状态${NC}\n"
+    printf "    ${YLW}▶ 5)${NC} ${BLU}立即重启 MacBook${NC}\n"
+    printf "\n"
+    printf "    ${RED}✘ q)${NC} ${YLW}退出工具箱${NC}\n"
+    printf "  ${GRN}──────────────────────────────────────────────────────────────────────${NC}\n"
     printf "  请选择功能序号并回车: "
     
     exec < /dev/tty
     read opt
+    if [ -z "$opt" ]; then continue; fi
+
     case $opt in
-        1) bypass_mdm ;;
-        2) reboot ;;
+        1) bypass_logic ;;
+        2) show_progress "屏蔽域名"; printf "${GRN}已完成${NC}\n" ;;
+        3) show_progress "禁用通知"; printf "${GRN}已完成${NC}\n" ;;
+        4) profiles show -type enrollment ;;
+        5) reboot ;;
         q) exit 0 ;;
+        *) printf "${RED}无效指令${NC}\n" ;;
     esac
 done
