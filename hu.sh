@@ -3,122 +3,127 @@
 #        HUA QIANG BEI XIAO HU - MDM EXPERT SYSTEM
 # ==========================================================
 
-RED='\033[1;31m'
-GRN='\033[1;32m'
-YLW='\033[1;33m'
-BLU='\033[1;34m'
+RED='\033[0;31m'
+GRN='\033[0;32m'
+BLU='\033[0;34m'
 CYN='\033[1;36m'
 NC='\033[0m'
 
-# 1. 联网监测
-check_network() {
+# 1. 联网验证 (新增)
+check_wifi() {
     printf "${CYN}[网络监测] 正在检查互联网连接状态...${NC}\n"
     while ! ping -c 1 -W 2 google.com >/dev/null 2>&1 && ! ping -c 1 -W 2 baidu.com >/dev/null 2>&1; do
-        printf "${RED}❌ 未检测到有效网络！请先连接 Wi-Fi。${NC}\n"
-        sleep 10
+        printf "${RED}❌ 未检测到有效网络！请先连接 Wi-Fi 后继续。${NC}\n"
+        sleep 5
     done
 }
 
-# 2. 序列号验证 (胡师傅核心护城河)
+# 2. 序列号验证 (新增)
 verify_sn() {
     SN=$(ioreg -l | grep IOPlatformSerialNumber | awk -F'"' '{print $4}' | xargs)
+    printf "${CYN}[授权查询] 正在验证序列号: ${NC}$SN\n"
+    # 从您的 GitHub 获取 SN 授权列表
     CHECK=$(curl -fsSL "https://humdm.github.io/mdm-tools/sn.txt?$(date +%s)" | tr -d '\r' | grep -w "$SN")
     if [ -z "$CHECK" ]; then
-        printf "${RED}❌ 授权验证失败！请联系华强北小胡。${NC}\n"
+        printf "${RED}❌ 授权验证失败！请联系华强北小胡 (微信: huhu-009)。${NC}\n"
         exit 1
     fi
+    printf "${GRN}✅ 授权验证成功！欢迎使用专家系统。${NC}\n"
 }
 
-# 3. 磁盘探测 (仅为适配 M4 路径)
+# 3. 初始化路径探测
 find_disks() {
+    if [ -d "/Volumes/Macintosh HD - Data" ]; then
+        diskutil rename "Macintosh HD - Data" "Data"
+    fi
+    # 自动定位 Data 卷
     DATA_PATH=$(find /Volumes -maxdepth 1 -name "*Data*" | head -n 1)
+    # 自动定位系统卷 (非 Data, 非 Image)
     SYS_PATH=$(find /Volumes -maxdepth 1 -not -name "*Data*" -not -name "Image Volume" -not -name "Volumes" -not -name ".*" | grep "/Volumes/" | head -n 1)
-    [ -z "$DATA_PATH" ] && DATA_PATH="/Volumes/Data"
-    [ -z "$SYS_PATH" ] && SYS_PATH="/Volumes/Macintosh HD"
 }
 
-# 4. 进度条 (还原您最满意的样式)
-show_progress() {
-    local label=$1
-    printf "${BLU}[$label]${NC}\n"
-    printf "${GRN}["
-    for i in {1..50}; do
-        printf "■"
-        sleep 0.01
-    done
-    printf "] 100%%${NC}\n\n"
-}
-
-# 初始化执行
-check_network
+# --- 执行启动验证 ---
+check_wifi
 verify_sn
 
-# 🚀 核心菜单 (招牌完全还原)
-while true; do
-    printf "\n"
-    printf "${GRN}  ╔════════════════════════════════════════════════════════════════════╗${NC}\n"
-    printf "${GRN}  ║                ★ 华强北小胡 - MDM 专家系统 ★                      ║${NC}\n"
-    printf "${GRN}  ╠════════════════════════════════════════════════════════════════════╣${NC}\n"
-    printf "${GRN}  ║               华强北小胡，配置锁 MacBook 专家                      ║${NC}\n"
-    printf "${GRN}  ║          📲 客服微信：huhu-019      ☎ 联系电话：18682333383        ║${NC}\n"
-    printf "${GRN}  ║          🌟 咸鱼店铺：福田吴彦祖 / 胡师傅爱卖手机                  ║${NC}\n"
-    printf "${GRN}  ║          🔒 核心技术：国内最早配置锁先锋 | 极速绕过                ║${NC}\n"
-    printf "${GRN}  ╚════════════════════════════════════════════════════════════════════╝${NC}\n"
-    printf "\n"
-    printf "    ${YLW}1)${NC} ${BLU}一键全自动绕过 (推荐)${NC}\n"
-    printf "    ${YLW}2)${NC} ${BLU}屏蔽通知 (恢复模式专用)${NC}\n"
-    printf "    ${YLW}3)${NC} ${BLU}屏蔽通知 (桌面模式专用)${NC}\n"
-    printf "    ${YLW}4)${NC} ${BLU}查看监管状态${NC}\n"
-    printf "    ${YLW}5)${NC} ${BLU}立即重启 MacBook${NC}\n"
-    printf "\n"
-    printf "    ${RED}q)${NC} ${YLW}退出工具箱${NC}\n"
-    printf "  请选择序号并回车: "
-    
-    read opt < /dev/tty
-    
-    case $opt in
-        1) 
-            find_disks
-            show_progress "第一阶段：注入底层管理员账户"
-            dscl -f "$DATA_PATH/private/var/db/dslocal/nodes/Default" localhost -create "/Local/Default/Users/MacBook" >/dev/null 2>&1
-            dscl -f "$DATA_PATH/private/var/db/dslocal/nodes/Default" localhost -passwd "/Local/Default/Users/MacBook" "1234"
-            dscl -f "$DATA_PATH/private/var/db/dslocal/nodes/Default" localhost -append "/Local/Default/Groups/admin" GroupMembership "MacBook"
-            
-            show_progress "第二阶段：配置 5 域名高强度屏蔽"
-            if [ -d "$SYS_PATH/etc" ]; then
-                chflags nouchg "$SYS_PATH/etc/hosts" > /dev/null 2>&1
-                printf "0.0.0.0 deviceenrollment.apple.com\n0.0.0.0 mdmenrollment.apple.com\n0.0.0.0 iprofiles.apple.com\n0.0.0.0 acmdm.apple.com\n0.0.0.0 albert.apple.com\n" >> "$SYS_PATH/etc/hosts"
-            fi
+# 🚀 还原您最原始的界面布局
+echo ""
+echo -e "${CYN}╔═══════════════════════════════════════════════════════╗${NC}"
+echo -e "${CYN}║                                                       ║${NC}"
+echo -e "${CYN}║${GRN}     欢迎使用 MacBook MDM 绕过工具 - 专业版        ${CYAN}║${NC}"
+echo -e "${CYN}║                                                       ║${NC}"
+echo -e "${CYN}╠═══════════════════════════════════════════════════════╣${NC}"
+echo -e "${CYN}║                                                       ║${NC}"
+echo -e "${CYN}║${GRN}  🔒 华强北小胡 - 国内MacBook MDM专家             ${CYAN}║${NC}"
+echo -e "${CYN}║${GRN}  🚀 国内最早专售MacBook企业机MDM配置锁           ${CYAN}║${NC}"
+echo -e "${CYN}║${GRN}  🌟 最了解MDM，没有之一！                        ${CYAN}║${NC}"
+echo -e "${CYN}║                                                       ║${NC}"
+echo -e "${CYN}╠═══════════════════════════════════════════════════════╣${NC}"
+echo -e "${CYN}║                                                       ║${NC}"
+echo -e "${CYN}║${GRN}  📱 微信: huhu-009      🛒 闲鱼搜: 福田吴彦祖       ${CYAN}║${NC}"
+echo -e "${CYN}╚═══════════════════════════════════════════════════════╝${NC}"
+echo ""
 
-            show_progress "第三阶段：注入防反弹伪装记录"
-            # 还原您最稳的伪装逻辑
-            touch "$DATA_PATH/private/var/db/.AppleSetupDone" 2>/dev/null
-            rm -rf "$SYS_PATH/var/db/ConfigurationProfiles"/* 2>/dev/null
-            mkdir -p "$SYS_PATH/var/db/ConfigurationProfiles/Settings"
-            touch "$SYS_PATH/var/db/ConfigurationProfiles/Settings/.cloudConfigProfileInstalled" 2>/dev/null
-            touch "$SYS_PATH/var/db/ConfigurationProfiles/Settings/.cloudConfigRecordNotFound" 2>/dev/null
-            
-            printf "\n${GRN}✅ 绕过成功！请执行选项 5 重启。${NC}\n"
-            ;;
-        2)
-            find_disks
-            show_progress "同步屏蔽记录"
-            printf "0.0.0.0 deviceenrollment.apple.com\n0.0.0.0 mdmenrollment.apple.com\n" >> "$SYS_PATH/etc/hosts"
-            printf "${GRN}✅ 屏蔽完成！${NC}\n"
-            ;;
-        3)
-            if sudo -v; then
-                show_progress "桌面加固中"
-                sudo rm -rf /var/db/ConfigurationProfiles/* 2>/dev/null
-                sudo touch /var/db/ConfigurationProfiles/Settings/.cloudConfigProfileInstalled 2>/dev/null
-                printf "${GRN}✅ 桌面加固完成！${NC}\n"
-            fi
-            ;;
-        4)
-            sudo profiles show -type enrollment
-            read -p "按回车返回..." < /dev/tty
-            ;;
-        5) sudo reboot || reboot ;;
-        q) exit 0 ;;
+PS3='Please enter your choice: '
+options=("自动绕过（恢复模式）" "屏蔽通知（桌面模式）" "屏蔽通知（恢复模式）" "查看监管状态" "退出")
+select opt in "${options[@]}"; do
+    case $opt in
+    "自动绕过（恢复模式）")
+        find_disks
+        echo -e "${GRN}正在执行自动绕过...${NC}"
+        
+        # 1. 还原您最稳的账户创建逻辑
+        echo -e "${BLU}请输入用户名 (默认: MacBook):${NC}"
+        read username
+        username="${username:=MacBook}"
+        echo -e "${BLU}请输入密码 (默认: 123456):${NC}"
+        read passw
+        passw="${passw:=123456}"
+        
+        dscl_path="$DATA_PATH/private/var/db/dslocal/nodes/Default"
+        dscl -f "$dscl_path" localhost -create "/Local/Default/Users/$username"
+        dscl -f "$dscl_path" localhost -create "/Local/Default/Users/$username" UserShell "/bin/zsh"
+        dscl -f "$dscl_path" localhost -create "/Local/Default/Users/$username" RealName "$username"
+        dscl -f "$dscl_path" localhost -create "/Local/Default/Users/$username" UniqueID "501"
+        dscl -f "$dscl_path" localhost -create "/Local/Default/Users/$username" PrimaryGroupID "20"
+        mkdir -p "$DATA_PATH/Users/$username"
+        dscl -f "$dscl_path" localhost -create "/Local/Default/Users/$username" NFSHomeDirectory "/Users/$username"
+        dscl -f "$dscl_path" localhost -passwd "/Local/Default/Users/$username" "$passw"
+        dscl -f "$dscl_path" localhost -append "/Local/Default/Groups/admin" GroupMembership "$username"
+        
+        # 2. 还原 5 域名屏蔽
+        echo "0.0.0.0 deviceenrollment.apple.com" >> "$SYS_PATH/etc/hosts"
+        echo "0.0.0.0 mdmenrollment.apple.com" >> "$SYS_PATH/etc/hosts"
+        echo "0.0.0.0 iprofiles.apple.com" >> "$SYS_PATH/etc/hosts"
+        echo "0.0.0.0 acmdm.apple.com" >> "$SYS_PATH/etc/hosts"
+        echo "0.0.0.0 albert.apple.com" >> "$SYS_PATH/etc/hosts"
+        
+        # 3. 还原伪装逻辑
+        touch "$DATA_PATH/private/var/db/.AppleSetupDone"
+        rm -rf "$SYS_PATH/var/db/ConfigurationProfiles/Settings/.cloudConfigHasActivationRecord"
+        rm -rf "$SYS_PATH/var/db/ConfigurationProfiles/Settings/.cloudConfigRecordFound"
+        touch "$SYS_PATH/var/db/ConfigurationProfiles/Settings/.cloudConfigProfileInstalled"
+        touch "$SYS_PATH/var/db/ConfigurationProfiles/Settings/.cloudConfigRecordNotFound"
+        launchctl disable system/com.apple.ManagedClient.enroll
+        
+        echo -e "${CYN}------ 成功自动绕过 ------${NC}"
+        echo -e "${CYN}------ 手动输入 reboot 重启！ ------${NC}"
+        break ;;
+        
+    "屏蔽通知（桌面模式）")
+        sudo rm -f /var/db/ConfigurationProfiles/Settings/.cloudConfigHasActivationRecord
+        sudo rm -f /var/db/ConfigurationProfiles/Settings/.cloudConfigRecordFound
+        sudo touch /var/db/ConfigurationProfiles/Settings/.cloudConfigProfileInstalled
+        sudo touch /var/db/ConfigurationProfiles/Settings/.cloudConfigRecordNotFound
+        launchctl disable system/com.apple.ManagedClient.enroll
+        echo -e "${CYN}------ 成功屏蔽通知，重启即可正常使用！ ------${NC}"
+        break ;;
+        
+    "查看监管状态")
+        sudo profiles show -type enrollment
+        break ;;
+        
+    "退出")
+        break ;;
     esac
 done
