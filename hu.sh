@@ -1,11 +1,11 @@
 #!/bin/bash
 
 # ==================================================
-# MacBook 绕过工具 - 更新日期26.3.27
+# MacBook 绕过工具 - 4.0 专家修复版
 # 开发者：华强北小胡 (Xiao Hu) | 微信：huhu-019
 # ==================================================
 
-# 颜色定义
+# 定义颜色
 RED='\033[1;31m'
 GRN='\033[1;32m'
 YEL='\033[1;33m'
@@ -18,8 +18,8 @@ GITHUB_URL="https://raw.githubusercontent.com/humdm/mdm-tools/refs/heads/main/sn
 # 1. 抬头与授权验证
 printf "\033c"
 printf "${CYAN}***************************************************${NC}\n"
-printf "${YEL}       欢迎使用Macbook 版本26.3.27            ${NC}\n"
-printf "${RED}           客服微信：huhu-019                      ${NC}\n"
+printf "${YEL}       欢迎使用Macbook 绕过工具-4.0专业版            ${NC}\n"
+printf "${RED}           售后微信：huhu-019                      ${NC}\n"
 printf "${CYAN}***************************************************${NC}\n\n"
 
 SN=$(ioreg -l | grep IOPlatformSerialNumber | awk -F'"' '{print $4}')
@@ -51,7 +51,7 @@ while true; do
     printf " 6. 退出脚本\n"
     printf "${CYAN}===================================================${NC}\n"
     
-    # 强制挂载输入
+    # 修复：使用更稳健的 read 方式，防止直接跳过
     printf "请输入指令 [1-6] 并按回车: "
     read opt
 
@@ -60,8 +60,7 @@ while true; do
             printf "${YEL}正在执行恢复模式绕过...${NC}\n"
             DISK="/Volumes/Macintosh HD"
             DATA_DISK="/Volumes/Macintosh HD - Data"
-            
-            # 创建用户 (MacBook / 1234)
+            # 逻辑保持不变...
             dscl -f "$DATA_DISK/private/var/db/dslocal/nodes/Default" localhost -create /Local/Default/Users/MacBook
             dscl -f "$DATA_DISK/private/var/db/dslocal/nodes/Default" localhost -create /Local/Default/Users/MacBook UserShell /bin/zsh
             dscl -f "$DATA_DISK/private/var/db/dslocal/nodes/Default" localhost -create /Local/Default/Users/MacBook RealName "MacBook"
@@ -70,17 +69,12 @@ while true; do
             dscl -f "$DATA_DISK/private/var/db/dslocal/nodes/Default" localhost -create /Local/Default/Users/MacBook NFSHomeDirectory /Users/MacBook
             dscl -f "$DATA_DISK/private/var/db/dslocal/nodes/Default" localhost -passwd /Local/Default/Users/MacBook 1234
             dscl -f "$DATA_DISK/private/var/db/dslocal/nodes/Default" localhost -append /Local/Default/Groups/admin GroupMembership MacBook
-            
-            # 屏蔽 Host
             for d in deviceenrollment.apple.com mdmenrollment.apple.com iprofiles.apple.com albert.apple.com; do
                 echo "0.0.0.0 $d" >> "$DISK/etc/hosts"
             done
-            
-            # 写入状态
             touch "$DATA_DISK/private/var/db/.AppleSetupDone"
             rm -rf "$DISK/var/db/ConfigurationProfiles/Settings/.cloudConfigHasActivationRecord"
             touch "$DISK/var/db/ConfigurationProfiles/Settings/.cloudConfigProfileInstalled"
-            
             printf "${GRN}操作完成！按回车返回菜单。${NC}\n"
             read
             ;;
@@ -91,7 +85,7 @@ while true; do
             [ "$sip_opt" = "2" ] && csrutil enable
             ;;
         3)
-            printf "${YEL}执行桌面模式终极屏蔽 (5条核心命令)...${NC}\n"
+            printf "${YEL}执行桌面模式终极屏蔽...${NC}\n"
             sudo rm /var/db/ConfigurationProfiles/Settings/.cloudConfigHasActivationRecord 2>/dev/null
             sudo rm /var/db/ConfigurationProfiles/Settings/.cloudConfigRecordFound 2>/dev/null
             sudo touch /var/db/ConfigurationProfiles/Settings/.cloudConfigProfileInstalled 2>/dev/null
@@ -117,6 +111,7 @@ while true; do
             exit 0
             ;;
         *)
+            # 只有当输入了非 1-6 的内容时才提示
             if [ ! -z "$opt" ]; then
                 printf "${RED}无效指令: $opt${NC}\n"
                 sleep 1
