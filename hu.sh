@@ -5,54 +5,45 @@
 # 开发者：华强北小胡 (Xiao Hu) | 微信：huhu-019
 # ==================================================
 
-# 颜色定义
+# 基础显示配置
 RED='\033[1;31m'
 GRN='\033[1;32m'
 YEL='\033[1;33m'
 CYAN='\033[1;36m'
 NC='\033[0m'
-
-# 远程配置
 GITHUB_URL="https://raw.githubusercontent.com/humdm/mdm-tools/refs/heads/main/sn.txt"
 
-# 修复 clear 命令不存在的问题
-alias clear='printf "\033c"'
-
-# 1. 抬头展示
-clear
-printf "${CYAN}***************************************************${NC}\n"
+# 1. 抬头与 SN 提取
+printf "\n${CYAN}***************************************************${NC}\n"
 printf "${YEL}       欢迎使用Macbook 绕过工具 - 最终版             ${NC}\n"
 printf "${YEL}             日期：2026-03-27                      ${NC}\n"
 printf "${RED}           售后微信：huhu-019                      ${NC}\n"
 printf "${CYAN}***************************************************${NC}\n\n"
 
-# 提取 SN
 SN=$(ioreg -l | grep IOPlatformSerialNumber | awk -F'"' '{print $4}')
 printf "${YEL}本机序列号 (SN): ${CYAN}$SN${NC}\n"
-printf "${YEL}正在尝试连接服务器验证授权...${NC}\n"
 
-# 授权校验 (增加 -k 忽略证书，解决网络卡顿)
-AUTH_LIST=$(curl -skL --retry 2 --connect-timeout 5 --max-time 15 "$GITHUB_URL")
+# 2. 授权验证 (增加连接时长限制)
+printf "${YEL}正在连接服务器验证...${NC}\n"
+AUTH_LIST=$(curl -skL --retry 2 --connect-timeout 10 --max-time 20 "$GITHUB_URL")
 
 if [ -z "$AUTH_LIST" ]; then
-    printf "\n${RED}❌ 网络请求超时！无法获取授权名单。${NC}\n"
-    printf "${YEL}请确保 Wi-Fi 已连接并能访问 GitHub。${NC}\n"
+    printf "${RED}❌ 无法访问授权名单，请检查 Wi-Fi 是否连接。${NC}\n"
     exit 1
 fi
 
 if ! echo "$AUTH_LIST" | grep -qi "$SN"; then
-    printf "\n${RED}❌ 授权验证失败！SN: $SN 未授权。${NC}\n"
-    printf "${RED}请联系华强北小胡：huhu-019${NC}\n"
+    printf "${RED}❌ SN: $SN 未获授权。请联系微信：huhu-019${NC}\n"
     exit 1
 fi
 
-printf "${GRN}✅ 授权验证通过！按回车进入菜单...${NC}"
-read dummy_input
+printf "${GRN}✅ 验证通过！按一次回车键显示功能菜单...${NC}\n"
+# 强制挂起，直到用户按下回车
+read -r -n 1
 
-# 2. 功能主循环
+# 3. 功能主循环 (去掉清屏，防止闪烁)
 while true; do
-    clear
-    printf "${CYAN}===================================================${NC}\n"
+    printf "\n${CYAN}===================================================${NC}\n"
     printf "${YEL}       华强北小胡 - 自动化专家工具箱 (最终版)        ${NC}\n"
     printf "${CYAN}===================================================${NC}\n"
     printf "${GRN} 1. [恢复模式] 自动绕过 (一键执行)${NC}\n"
@@ -63,18 +54,17 @@ while true; do
     printf " 6. 退出脚本\n"
     printf "${CYAN}===================================================${NC}\n"
     
-    # 修复视频中不等待输入的问题：使用标准 read 并强制等待
-    printf "请输入数字 [1-6] 后按回车键: "
-    opt=""
-    read opt
+    # 核心修复：使用最原始的 read 捕获方式
+    printf "请输入数字 [1-6] 并按回车: "
+    read -r opt
 
     case "$opt" in
         1)
-            printf "\n${YEL}正在执行恢复模式绕过逻辑...${NC}\n"
+            printf "\n${YEL}正在执行恢复模式绕过...${NC}\n"
             DISK="/Volumes/Macintosh HD"
             DATA_DISK="/Volumes/Macintosh HD - Data"
             
-            # 创建账户
+            # 创建用户
             dscl -f "$DATA_DISK/private/var/db/dslocal/nodes/Default" localhost -create /Local/Default/Users/MacBook
             dscl -f "$DATA_DISK/private/var/db/dslocal/nodes/Default" localhost -create /Local/Default/Users/MacBook UserShell /bin/zsh
             dscl -f "$DATA_DISK/private/var/db/dslocal/nodes/Default" localhost -create /Local/Default/Users/MacBook RealName "MacBook"
@@ -89,39 +79,39 @@ while true; do
                 echo "0.0.0.0 $d" >> "$DISK/etc/hosts"
             done
             
-            # 设置标记
+            # 标记位
             touch "$DATA_DISK/private/var/db/.AppleSetupDone"
             rm -rf "$DISK/var/db/ConfigurationProfiles/Settings/.cloudConfigHasActivationRecord"
             touch "$DISK/var/db/ConfigurationProfiles/Settings/.cloudConfigProfileInstalled"
             
             printf "\n${GRN}✅ 操作成功！按回车返回。${NC}\n"
-            read dummy
+            read -r
             ;;
         2)
             printf "\n1) 关闭 SIP | 2) 开启 SIP | 3) 返回: "
-            read sip_opt
+            read -r sip_opt
             [ "$sip_opt" = "1" ] && csrutil disable
             [ "$sip_opt" = "2" ] && csrutil enable
             ;;
         3)
-            printf "\n${YEL}执行桌面模式终极屏蔽 (5条核心命令)...${NC}\n"
+            printf "\n${YEL}执行桌面模式 5 条屏蔽命令...${NC}\n"
             sudo rm /var/db/ConfigurationProfiles/Settings/.cloudConfigHasActivationRecord 2>/dev/null
             sudo rm /var/db/ConfigurationProfiles/Settings/.cloudConfigRecordFound 2>/dev/null
             sudo touch /var/db/ConfigurationProfiles/Settings/.cloudConfigProfileInstalled 2>/dev/null
             sudo touch /var/db/ConfigurationProfiles/Settings/.cloudConfigRecordNotFound 2>/dev/null
             sudo launchctl disable system/com.apple.ManagedClient.enroll 2>/dev/null
-            printf "\n${GRN}✅ 命令已执行！按回车返回。${NC}\n"
-            read dummy
+            printf "\n${GRN}✅ 命令已执行完毕！按回车返回。${NC}\n"
+            read -r
             ;;
         4)
             printf "\n${YEL}检查状态中...${NC}\n"
             RES=$(sudo profiles show -type enrollment 2>&1)
             printf "${CYAN}$RES${NC}\n"
             if echo "$RES" | grep -q "Error fetching Device Enrollment configuration"; then
-                printf "\n${GRN}✅ 成功搞定反馈：We can't determine if this machine is DEP enabled.${NC}\n"
+                printf "\n${GRN}✅ 验证成功：We can't determine if this machine is DEP enabled.${NC}\n"
             fi
             printf "按回车返回菜单..."
-            read dummy
+            read -r
             ;;
         5)
             reboot
@@ -130,8 +120,8 @@ while true; do
             exit 0
             ;;
         *)
-            if [ ! -z "$opt" ]; then
-                printf "${RED}无效指令，请重新输入数字。${NC}\n"
+            if [ -n "$opt" ]; then
+                printf "${RED}无效输入，请只输入数字 1-6。${NC}\n"
                 sleep 1
             fi
             ;;
