@@ -5,13 +5,11 @@ RED='\033[1;31m'
 GRN='\033[1;32m'
 BLU='\033[1;34m'
 YEL='\033[1;33m'
-PUR='\033[1;35m'
 CYAN='\033[1;36m'
 NC='\033[0m'
 
-# 获取脚本所在目录
-SCRIPT_DIR=$(cd "$(dirname "$0")"; pwd)
-SN_FILE="$SCRIPT_DIR/sn.txt"
+# --- 远程配置 (填入你的 GitHub Raw 链接) ---
+GITHUB_URL="https://raw.githubusercontent.com/你的用户名/仓库名/main/sn.txt"
 
 # --- 严格维持 4.0 抬头 ---
 clear
@@ -21,52 +19,52 @@ echo -e "${RED}           售后微信：huhu-019                      ${NC}"
 echo -e "${CYAN}***************************************************${NC}"
 echo ""
 
-# --- 1. 验证 Wi-Fi 连接 (第一步) ---
-echo -e "${BLU}正在检测网络连接状态...${NC}"
+# --- 1. 验证 Wi-Fi ---
 if ! ping -c 1 -W 2 apple.com > /dev/null 2>&1; then
     echo -e "${RED}错误：Wi-Fi 未连接！${NC}"
     echo -e "${YEL}请先连接 Wi-Fi 后再运行脚本。${NC}"
     exit 1
 fi
 
-# --- 2. 验证序列号授权 (第二步) ---
-echo -e "${BLU}正在验证序列号授权...${NC}"
+# --- 2. 验证序列号 (GitHub 实时校验) ---
 CURRENT_SN=$(ioreg -l | grep IOPlatformSerialNumber | awk -F'"' '{print $4}')
+echo -e "${YEL}本机序列号 (SN): ${CYAN}$CURRENT_SN${NC}"
 
-if [ ! -f "$SN_FILE" ]; then
-    echo -e "${RED}未找到授权文件 sn.txt，请联系华强北小胡：huhu-019${NC}"
+# 从 GitHub 获取名单并实时匹配
+AUTH_LIST=$(curl -s -f -L "$GITHUB_URL")
+
+if [ $? -ne 0 ]; then
+    echo -e "${RED}访问授权失败，请检查网络！${NC}"
     exit 1
 fi
 
-if ! grep -qi "$CURRENT_SN" "$SN_FILE"; then
+if echo "$AUTH_LIST" | grep -qi "$CURRENT_SN"; then
+    echo -e "${GRN}授权验证成功！${NC}"
+else
     echo -e "${RED}***************************************************${NC}"
-    echo -e "${RED}* 错误：序列号 [ $CURRENT_SN ] 未备案！        *${NC}"
-    echo -e "${RED}* 请联系华强北小胡处理：huhu-019               *${NC}"
+    echo -e "${RED}* 错误：当前序列号未授权！                     *${NC}"
+    echo -e "${RED}* 请联系华强北小胡开通：huhu-019               *${NC}"
     echo -e "${RED}***************************************************${NC}"
     exit 1
 fi
 
-# --- 3. 自动定位硬盘分区 (核心智能逻辑) ---
-echo -e "${BLU}正在自动定位硬盘分区...${NC}"
+# --- 3. 自动定位硬盘分区 ---
 SYS_PATH=$(find /Volumes -maxdepth 2 -name "hosts" -path "*/etc/hosts" | sed 's|/etc/hosts||' | head -n 1)
 DATA_PATH=$(find /Volumes -maxdepth 4 -name "dslocal" -path "*/private/var/db/dslocal" | sed 's|/private/var/db/dslocal||' | head -n 1)
 
 if [ -z "$SYS_PATH" ] || [ -z "$DATA_PATH" ]; then
-    echo -e "${RED}错误：无法自动识别硬盘！请确保已在磁盘工具中挂载并解锁分区。${NC}"
+    echo -e "${RED}无法定位硬盘！请确保已挂载并解锁分区。${NC}"
     exit 1
 fi
 
-echo -e "${GRN}验证通过！正在进入功能菜单...${NC}"
-echo ""
-
-# --- 4. 功能菜单 (已整合 SIP 管理) ---
+# --- 4. 功能菜单 ---
 PS3='Please enter your choice: '
 options=("自动绕过 (Recovery 模式)" "开启/关闭 SIP 服务" "屏蔽通知 (桌面模式)" "查看监管状态" "重启电脑" "退出")
 
 select opt in "${options[@]}"; do
     case $opt in
     "自动绕过 (Recovery 模式)")
-        echo -e "${GRN}开始执行自动绕过逻辑...${NC}"
+        echo -e "${GRN}执行绕过逻辑...${NC}"
         realName="MacBook"
         username="MacBook"
         passw="1234"
@@ -95,32 +93,15 @@ select opt in "${options[@]}"; do
         launchctl disable system/com.apple.ManagedClient.enroll
         launchctl disable system/com.apple.CloudConfigurationManager
 
-        echo -e "${CYAN}------ 自动绕过执行成功！ ------${NC}"
-        echo -e "${CYAN}------ 请退出终端手动重启电脑！ ------${NC}"
+        echo -e "${CYAN}------ 执行成功！请退出并重启 ------${NC}"
         break
         ;;
 
     "开启/关闭 SIP 服务")
-        echo -e "${YEL}--- SIP (系统完整性保护) 管理 ---${NC}"
-        echo -e "1) 关闭 SIP (处理 MDM 推荐)"
-        echo -e "2) 开启 SIP (恢复官方状态)"
-        echo -e "3) 返回主菜单"
-        read -p "请选择 (1-3): " sip_opt
-        case $sip_opt in
-            1)
-                echo -e "${RED}正在关闭 SIP...${NC}"
-                csrutil disable
-                echo -e "${GRN}SIP 已关闭，请务必手动重启电脑以使更改生效！${NC}"
-                ;;
-            2)
-                echo -e "${BLU}正在开启 SIP...${NC}"
-                csrutil enable
-                echo -e "${GRN}SIP 已开启，请重启电脑。${NC}"
-                ;;
-            *)
-                echo "已返回。"
-                ;;
-        esac
+        echo -e "1) 关闭 SIP | 2) 开启 SIP | 3) 返回"
+        read -p "选择: " sip_opt
+        [ "$sip_opt" = "1" ] && csrutil disable && echo "已执行关闭，请重启生效。"
+        [ "$sip_opt" = "2" ] && csrutil enable && echo "已执行开启，请重启生效。"
         ;;
 
     "屏蔽通知 (桌面模式)")
@@ -130,8 +111,7 @@ select opt in "${options[@]}"; do
         sudo touch /var/db/ConfigurationProfiles/Settings/.cloudConfigRecordNotFound
         sudo launchctl disable system/com.apple.ManagedClient.enroll
         sudo launchctl disable system/com.apple.CloudConfigurationManager
-        echo -e "${GRN}屏蔽任务执行完毕！${NC}"
-        break
+        echo -e "${GRN}Done!${NC}"
         ;;
 
     "查看监管状态")
@@ -148,6 +128,6 @@ select opt in "${options[@]}"; do
         exit 0
         ;;
 
-    *) echo "无效选项 $REPLY" ;;
+    *) echo "Invalid option $REPLY" ;;
     esac
 done
