@@ -1,114 +1,140 @@
 #!/bin/bash
 
-# ==================================================
-# MacBook 绕过工具 - 最终版 (2026-03-27)
-# 开发者：华强北小胡 (Xiao Hu) | 微信：huhu-019
-# ==================================================
+# ============================================
+# MacBook MDM 绕过工具 - 整合进化版
+# 作者: 华强北小胡 (福田吴彦祖)
+# 微信: huhu-009 | 2026-03-27 更新
+# 说明: 整合恢复模式绕过 + 桌面模式屏蔽
+# ============================================
 
-# 基础文字显示
-RED='\033[1;31m'
-GRN='\033[1;32m'
-YEL='\033[1;33m'
-CYAN='\033[1;36m'
-NC='\033[0m'
-GITHUB_URL="https://raw.githubusercontent.com/humdm/mdm-tools/refs/heads/main/sn.txt"
+# 颜色定义
+RED='\033[1;31m'; GRN='\033[1;32m'; YEL='\033[1;33m'; BLU='\033[1;34m'; CYAN='\033[1;36m'; NC='\033[0m'
 
-# 1. 提取并显示 SN
-SN=$(ioreg -l | grep IOPlatformSerialNumber | awk -F'"' '{print $4}')
-printf "\n${CYAN}***************************************************${NC}\n"
-printf "${YEL}       Macbook 绕过工具 - 最终版 (2026-03-27)        ${NC}\n"
-printf "${YEL}       本机序列号 (SN): ${CYAN}$SN${NC}\n"
-printf "${RED}       售后微信：huhu-019                           ${NC}\n"
-printf "${CYAN}***************************************************${NC}\n\n"
-
-# 2. 授权验证
-printf "${YEL}正在连接服务器验证...${NC}\n"
-AUTH_LIST=$(curl -skL --retry 2 --connect-timeout 10 "$GITHUB_URL")
-
-if [ -z "$AUTH_LIST" ]; then
-    printf "${RED}❌ 无法访问授权名单，请确认 Wi-Fi 已连通。${NC}\n"
-    exit 1
-fi
-
-if ! echo "$AUTH_LIST" | grep -qi "$SN"; then
-    printf "${RED}❌ SN: $SN 未获授权。请联系微信：huhu-019${NC}\n"
-    exit 1
-fi
-
-printf "${GRN}✅ 验证通过！${NC}\n"
-
-# 3. 功能菜单 (单次执行模式，不循环，防止乱跳)
-function show_menu() {
-    printf "\n${CYAN}---------------- 功能菜单 ----------------${NC}\n"
-    printf "${GRN} 1. [恢复模式] 自动绕过 (一键执行)${NC}\n"
-    printf " 2. [恢复模式] 开启/关闭 SIP 服务\n"
-    printf "${GRN} 3. [桌面模式] 终极屏蔽 (执行5条命令)${NC}\n"
-    printf " 4. [通用模式] 检查监管锁状态\n"
-    printf " 5. 立即重启电脑\n"
-    printf " 6. 退出脚本\n"
-    printf "${CYAN}------------------------------------------${NC}\n"
-    
-    # 核心修复：强制从 /dev/tty 获取键盘输入，防止脚本自跑
-    printf "请输入数字 [1-6] 并按回车: "
-    read -r opt < /dev/tty
-
-    case "$opt" in
-        1)
-            printf "\n${YEL}执行恢复模式绕过...${NC}\n"
-            DISK="/Volumes/Macintosh HD"
-            DATA_DISK="/Volumes/Macintosh HD - Data"
-            dscl -f "$DATA_DISK/private/var/db/dslocal/nodes/Default" localhost -create /Local/Default/Users/MacBook
-            dscl -f "$DATA_DISK/private/var/db/dslocal/nodes/Default" localhost -create /Local/Default/Users/MacBook UserShell /bin/zsh
-            dscl -f "$DATA_DISK/private/var/db/dslocal/nodes/Default" localhost -create /Local/Default/Users/MacBook RealName "MacBook"
-            dscl -f "$DATA_DISK/private/var/db/dslocal/nodes/Default" localhost -create /Local/Default/Users/MacBook UniqueID 501
-            dscl -f "$DATA_DISK/private/var/db/dslocal/nodes/Default" localhost -create /Local/Default/Users/MacBook PrimaryGroupID 20
-            dscl -f "$DATA_DISK/private/var/db/dslocal/nodes/Default" localhost -create /Local/Default/Users/MacBook NFSHomeDirectory /Users/MacBook
-            dscl -f "$DATA_DISK/private/var/db/dslocal/nodes/Default" localhost -passwd /Local/Default/Users/MacBook 1234
-            dscl -f "$DATA_DISK/private/var/db/dslocal/nodes/Default" localhost -append /Local/Default/Groups/admin GroupMembership MacBook
-            for d in deviceenrollment.apple.com mdmenrollment.apple.com iprofiles.apple.com albert.apple.com acmdm.apple.com; do
-                echo "0.0.0.0 $d" >> "$DISK/etc/hosts"
-            done
-            touch "$DATA_DISK/private/var/db/.AppleSetupDone"
-            rm -rf "$DISK/var/db/ConfigurationProfiles/Settings/.cloudConfigHasActivationRecord"
-            touch "$DISK/var/db/ConfigurationProfiles/Settings/.cloudConfigProfileInstalled"
-            printf "\n${GRN}✅ 操作成功！${NC}\n"
-            show_menu
-            ;;
-        2)
-            printf "\n1) 关闭 SIP | 2) 开启 SIP | 3) 返回: "
-            read -r sip_opt < /dev/tty
-            [ "$sip_opt" = "1" ] && csrutil disable
-            [ "$sip_opt" = "2" ] && csrutil enable
-            show_menu
-            ;;
-        3)
-            printf "\n${YEL}执行桌面 5 条屏蔽命令...${NC}\n"
-            sudo rm /var/db/ConfigurationProfiles/Settings/.cloudConfigHasActivationRecord 2>/dev/null
-            sudo rm /var/db/ConfigurationProfiles/Settings/.cloudConfigRecordFound 2>/dev/null
-            sudo touch /var/db/ConfigurationProfiles/Settings/.cloudConfigProfileInstalled 2>/dev/null
-            sudo touch /var/db/ConfigurationProfiles/Settings/.cloudConfigRecordNotFound 2>/dev/null
-            sudo launchctl disable system/com.apple.ManagedClient.enroll 2>/dev/null
-            printf "\n${GRN}✅ 命令已下发！${NC}\n"
-            show_menu
-            ;;
-        4)
-            printf "\n${YEL}检查状态结果：${NC}\n"
-            RES=$(sudo profiles show -type enrollment 2>&1)
-            printf "${CYAN}$RES${NC}\n"
-            show_menu
-            ;;
-        5)
-            reboot
-            ;;
-        6)
-            exit 0
-            ;;
-        *)
-            printf "${RED}无效输入，请重新运行或选择。${NC}\n"
-            show_menu
-            ;;
-    esac
+# 显示欢迎横幅
+show_banner() {
+    clear
+    echo -e "${CYAN}╔═══════════════════════════════════════════════════════╗${NC}"
+    echo -e "${CYAN}║${YEL}      欢迎使用 MacBook MDM 绕过工具 - 整合版         ${CYAN}║${NC}"
+    echo -e "${CYAN}╠═══════════════════════════════════════════════════════╣${NC}"
+    echo -e "${CYAN}║${GRN}  🔒 华强北小胡 - 国内最早专售企业机配置锁专家     ${CYAN}║${NC}"
+    echo -e "${CYAN}║${RED}  📱 微信: huhu-009    🛒 闲鱼: 福田吴彦祖         ${CYAN}║${NC}"
+    echo -e "${CYAN}╚═══════════════════════════════════════════════════════╝${NC}"
 }
 
-# 启动菜单
-show_menu
+# 环境检查
+check_recovery() {
+    [ -d "/Volumes/Macintosh HD" ] || [ -d "/Volumes/Data" ]
+}
+
+# 自动寻找磁盘路径 (比 rename 更稳，适配所有系统版本)
+get_paths() {
+    # 自动寻找 Data 卷路径
+    DATA_VOL=$(find /Volumes -maxdepth 2 -path "*/private/var/db/dslocal" | head -n 1 | sed 's|/private/var/db/dslocal||')
+    # 自动寻找系统卷路径 (包含 etc 的那个)
+    SYS_VOL=$(find /Volumes -maxdepth 2 -name "etc" | grep -v "Data" | head -n 1 | sed 's|/etc||')
+}
+
+# --- 功能模块 ---
+
+# 1. 恢复模式：自动绕过 (一键完成)
+do_recovery_bypass() {
+    get_paths
+    if [ -z "$DATA_VOL" ]; then
+        echo -e "${RED}❌ 错误: 未能识别到 Data 磁盘，请确认磁盘已解锁。${NC}"
+        return
+    fi
+
+    echo -e "\n${YEL}🚀 正在执行恢复模式一键绕过...${NC}"
+    
+    # 创建用户逻辑 (默认 MacBook / 123456)
+    echo -e "${BLU}👤 正在创建管理员用户: MacBook...${NC}"
+    dscl_path="$DATA_VOL/private/var/db/dslocal/nodes/Default"
+    dscl -f "$dscl_path" localhost -create /Local/Default/Users/MacBook
+    dscl -f "$dscl_path" localhost -create /Local/Default/Users/MacBook UserShell /bin/zsh
+    dscl -f "$dscl_path" localhost -create /Local/Default/Users/MacBook RealName "MacBook"
+    dscl -f "$dscl_path" localhost -create /Local/Default/Users/MacBook UniqueID 501
+    dscl -f "$dscl_path" localhost -create /Local/Default/Users/MacBook PrimaryGroupID 20
+    dscl -f "$dscl_path" localhost -create /Local/Default/Users/MacBook NFSHomeDirectory /Users/MacBook
+    dscl -f "$dscl_path" localhost -passwd /Local/Default/Users/MacBook 123456
+    dscl -f "$dscl_path" localhost -append /Local/Default/Groups/admin GroupMembership MacBook
+    mkdir -p "$DATA_VOL/Users/MacBook"
+
+    # 屏蔽 Hosts
+    echo -e "${BLU}🛡️  正在封锁 MDM 服务器域名...${NC}"
+    for d in acmdm.apple.com mdmenrollment.apple.com deviceenrollment.apple.com iprofiles.apple.com albert.apple.com; do
+        echo "0.0.0.0 $d" >> "$SYS_VOL/etc/hosts"
+    done
+
+    # 写入激活标记
+    echo -e "${BLU}⚙️  清理激活残留记录...${NC}"
+    touch "$DATA_VOL/private/var/db/.AppleSetupDone"
+    rm -rf "$SYS_VOL/var/db/ConfigurationProfiles/Settings/.cloudConfigHasActivationRecord" 2>/dev/null
+    rm -rf "$SYS_VOL/var/db/ConfigurationProfiles/Settings/.cloudConfigRecordFound" 2>/dev/null
+    touch "$SYS_VOL/var/db/ConfigurationProfiles/Settings/.cloudConfigProfileInstalled"
+    touch "$SYS_VOL/var/db/ConfigurationProfiles/Settings/.cloudConfigRecordNotFound"
+
+    echo -e "${GRN}✅ 恢复模式操作成功！请在终端输入 reboot 重启进入系统。${NC}"
+}
+
+# 2. 正常模式：桌面屏蔽 (整合那 5 条命令)
+do_desktop_block() {
+    echo -e "\n${YEL}🚀 正在执行桌面模式终极屏蔽...${NC}"
+    echo -e "${RED}⚠️  注意: 请输入系统登录密码并回车 (输入时不显示):${NC}"
+    
+    sudo rm -f /var/db/ConfigurationProfiles/Settings/.cloudConfigHasActivationRecord
+    sudo rm -f /var/db/ConfigurationProfiles/Settings/.cloudConfigRecordFound
+    sudo touch /var/db/ConfigurationProfiles/Settings/.cloudConfigProfileInstalled
+    sudo touch /var/db/ConfigurationProfiles/Settings/.cloudConfigRecordNotFound
+    sudo launchctl disable system/com.apple.ManagedClient.enroll
+    
+    echo -e "${GRN}✅ 屏蔽命令执行完毕。${NC}"
+    echo -e "${YEL}🔍 正在验证监管状态...${NC}"
+    
+    RES=$(sudo profiles show -type enrollment 2>&1)
+    echo -e "${CYAN}$RES${NC}"
+    
+    if echo "$RES" | grep -q "Error"; then
+        echo -e "\n${GRN}✨ 恭喜！验证结果匹配，MDM 锁已成功绕过！${NC}"
+    else
+        echo -e "\n${RED}⚠️  提示: 仍能查到监管信息，请检查网络是否已连通。${NC}"
+    fi
+}
+
+# --- 主循环 ---
+show_banner
+while true; do
+    if check_recovery; then
+        MODE="${YEL}[恢复模式]${NC}"
+    else
+        MODE="${GRN}[桌面模式]${NC}"
+    fi
+
+    echo -e "\n${CYAN}════════════ 当前环境: $MODE ════════════${NC}"
+    echo -e " 1) 🚀 一键自动绕过 (仅限恢复模式运行)"
+    echo -e " 2) 🛡️  终极屏蔽通知 (仅限进入桌面后运行)"
+    echo -e " 3) 🔍 查看监管状态 (验证是否成功)"
+    echo -e " 4) 🔄 立即重启电脑"
+    echo -e " 5) ❌ 退出脚本"
+    echo -e "${CYAN}═══════════════════════════════════════${NC}"
+    
+    echo -ne "👉 请输入数字 [1-5]: "
+    read -r choice < /dev/tty
+
+    case $choice in
+        1) 
+            if check_recovery; then do_recovery_bypass; else echo -e "${RED}❌ 请在恢复模式运行此项！${NC}"; fi 
+            ;;
+        2) 
+            if ! check_recovery; then do_desktop_block; else echo -e "${RED}❌ 请进入系统桌面后再运行此项！${NC}"; fi
+            ;;
+        3) 
+            echo -e "${YEL}正在查询...${NC}"
+            sudo profiles show -type enrollment
+            ;;
+        4) reboot ;;
+        5) exit 0 ;;
+        *) echo -e "${RED}无效输入，请重新选择。${NC}" ;;
+    esac
+    echo -ne "\n${BLU}按回车键返回菜单...${NC}"
+    read -r < /dev/tty
+done
