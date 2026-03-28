@@ -3,7 +3,7 @@
 # ============================================
 # MacBook MDM 绕过工具 - 中文版
 # 作者: 华强北小胡 (福田吴彦祖)
-# 微信: huhu-019
+# 微信: huhu-009
 # 说明: 国内MacBook MDM专家，最了解MDM
 # ============================================
 
@@ -33,7 +33,7 @@ show_banner() {
     echo -e "${CYAN}║                                                       ║${NC}"
     echo -e "${CYAN}╠═══════════════════════════════════════════════════════╣${NC}"
     echo -e "${CYAN}║                                                       ║${NC}"
-    echo -e "${CYAN}║${YEL}  📱 微信: ${RED}huhu-019${CYAN}                                  ║${NC}"
+    echo -e "${CYAN}║${YEL}  📱 微信: ${RED}huhu-009${CYAN}                                  ║${NC}"
     echo -e "${CYAN}║${YEL}  🛒 闲鱼搜: ${RED}福田吴彦祖${CYAN}                             ║${NC}"
     echo -e "${CYAN}║                                                       ║${NC}"
     echo -e "${CYAN}╚═══════════════════════════════════════════════════════╝${NC}"
@@ -139,12 +139,12 @@ block_mdm_hosts_recovery() {
     
     echo -e "${YEL}🔒 正在添加hosts屏蔽规则...${NC}"
     
-    # MDM域名列表 (小胡)
+    # MDM域名列表 (来自micaixin)
     cat >> /Volumes/Macintosh\ HD/etc/hosts << EOF
 
 # ============================================
 # MDM 屏蔽规则 - 由华强北小胡配置
-# 微信: huhu-019
+# 微信: huhu-009
 # ============================================
 
 # Apple MDM 服务器
@@ -202,7 +202,7 @@ block_mdm_hosts_normal() {
 
 # ============================================
 # MDM 屏蔽规则 - 由华强北小胡配置
-# 微信: huhu-019
+# 微信: huhu-009
 # ============================================
 
 # Apple MDM 服务器
@@ -274,8 +274,8 @@ show_completion() {
     echo -e "${CYAN}╠═══════════════════════════════════════════════════════╣${NC}"
     echo -e "${CYAN}║                                                       ║${NC}"
     echo -e "${CYAN}║${PUR}  💬 如有问题，请联系:                               ${CYAN}║${NC}"
-    echo -e "${CYAN}║${RED}     微信: huhu-019                                  ${CYAN}║${NC}"
-    echo -e "${CYAN}║${RED}     闲鱼: 福田吴彦祖                               ${CYAN}║${NC}"
+    echo -e "${CYAN}║${RED}     微信: huhu-009                                  ${CYAN}║${NC}"
+    echo -e "${CYAN}║${RED}     闲鱼: 福田吴彦祖                                ${CYAN}║${NC}"
     echo -e "${CYAN}║                                                       ║${NC}"
     echo -e "${CYAN}╚═══════════════════════════════════════════════════════╝${NC}"
     echo ""
@@ -459,7 +459,7 @@ main() {
             7)
                 echo ""
                 echo -e "${GRN}👋 感谢使用！再见！${NC}"
-                echo -e "${CYAN}💬 有问题请联系微信: ${RED}huhu-019${NC}"
+                echo -e "${CYAN}💬 有问题请联系微信: ${RED}huhu-009${NC}"
                 echo ""
                 exit 0
                 ;;
