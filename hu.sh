@@ -1,10 +1,10 @@
 #!/bin/bash
 
 # ============================================
-# MacBook MDM 绕过工具 - 2026 华强北专家版
+# MacBook MDM 绕过工具 - 2026 华强北全能版
 # 作者: 华强北小胡 (福田吴彦祖)
 # 微信: huhu-019
-# 说明: 国内MacBook MDM专家，最了解MDM
+# 说明: 国内MacBook MDM专家，支持恢复模式/桌面双兼容
 # ============================================
 
 # 颜色定义
@@ -16,20 +16,20 @@ PUR='\033[1;35m'
 CYAN='\033[1;36m'
 NC='\033[0m'
 
-# 检查是否在恢复模式 (改进版)
+# 检查环境函数 (精确判断桌面还是恢复模式)
 is_recovery() {
     if [ -f "/etc/rc.recovery" ] || [ -d "/System/Installation" ]; then
-        return 0  # 在恢复模式
+        return 0 # 恢复模式
     else
-        return 1  # 正常桌面
+        return 1 # 正常桌面
     fi
 }
 
-# 检查是否在恢复模式(严格检查)
+# 必须在恢复模式的检查
 require_recovery_mode() {
     if ! is_recovery; then
         echo -e "${RED}❌ 错误: 此功能必须在恢复模式下运行！${NC}"
-        echo -e "${YEL}💡 提示: 请重启Mac并进入恢复模式后再运行此脚本。${NC}"
+        echo -e "${YEL}💡 提示: 请重启Mac并按住 Command+R 进入恢复模式后再运行。${NC}"
         echo ""
         echo -e "${YEL}按任意键返回菜单...${NC}"
         read -n 1
@@ -43,7 +43,7 @@ show_banner() {
     clear
     echo -e "${CYAN}╔═══════════════════════════════════════════════════════╗${NC}"
     echo -e "${CYAN}║                                                       ║${NC}"
-    echo -e "${CYAN}║${YEL}     欢迎使用 MacBook MDM 绕过工具 - 专业版          ${CYAN}║${NC}"
+    echo -e "${CYAN}║${YEL}     欢迎使用 MacBook MDM 绕过工具 - 全能版          ${CYAN}║${NC}"
     echo -e "${CYAN}║                                                       ║${NC}"
     echo -e "${CYAN}╠═══════════════════════════════════════════════════════╣${NC}"
     echo -e "${CYAN}║                                                       ║${NC}"
@@ -58,9 +58,9 @@ show_banner() {
     echo -e "${CYAN}║                                                       ║${NC}"
     echo -e "${CYAN}╚═══════════════════════════════════════════════════════╝${NC}"
     if is_recovery; then
-        echo -e "${YEL}📍 当前状态: [ 恢复模式 ]${NC}"
+        echo -e "${YEL}📍 当前状态: [ 恢复模式 - RECOVERY ]${NC}"
     else
-        echo -e "${GRN}📍 当前状态: [ 正常桌面 ]${NC}"
+        echo -e "${GRN}📍 当前状态: [ 正常系统 - MACOS ]${NC}"
     fi
     echo ""
 }
@@ -106,17 +106,15 @@ create_user() {
     echo -e "${GRN}✅ 用户创建成功！${NC}"
 }
 
-# 屏蔽MDM域名 (正常模式 - 10大顶级屏蔽名单)
-block_mdm_hosts_normal() {
+# --- 核心逻辑：全自动适配屏蔽Hosts (选项2) ---
+block_mdm_hosts_universal() {
     if is_recovery; then
-        echo -e "${RED}❌ 错误: 此功能需在正常系统桌面运行！${NC}"
-        return
-    fi
-    echo -e "${RED}⚠️  此操作需要管理员密码${NC}"
-    sudo bash -c 'cat >> /etc/hosts' << 'EOF'
+        echo -e "${YEL}正在恢复模式下，直接修改磁盘Hosts文件...${NC}"
+        # 写入10大顶级域名
+        cat >> /Volumes/Macintosh\ HD/etc/hosts << EOF
 
 # ============================================
-# MDM 顶级屏蔽规则 - 华强北小胡独家 (huhu-019)
+# MDM 顶级屏蔽规则 - 华强北小胡 (huhu-019)
 # ============================================
 0.0.0.0 acmdm.apple.com
 0.0.0.0 mdmenrollment.apple.com
@@ -130,10 +128,32 @@ block_mdm_hosts_normal() {
 0.0.0.0 appldnld.apple.com
 # ============================================
 EOF
-    echo -e "${GRN}✅ 10大顶级MDM域名屏蔽完成！${NC}"
+        echo -e "${GRN}✅ 恢复模式下磁盘 Hosts 屏蔽成功！${NC}"
+    else
+        echo -e "${YEL}正在桌面环境下，通过sudo修改系统Hosts文件...${NC}"
+        echo -e "${RED}⚠️ 请输入您的开机密码并回车：${NC}"
+        sudo bash -c 'cat >> /etc/hosts' << 'EOF'
+
+# ============================================
+# MDM 顶级屏蔽规则 - 华强北小胡 (huhu-019)
+# ============================================
+0.0.0.0 acmdm.apple.com
+0.0.0.0 mdmenrollment.apple.com
+0.0.0.0 deviceenrollment.apple.com
+0.0.0.0 iprofiles.apple.com
+0.0.0.0 albert.apple.com
+0.0.0.0 vpp.itunes.apple.com
+0.0.0.0 gdmf.apple.com
+0.0.0.0 cloudddns.apple.com
+0.0.0.0 gg.apple.com
+0.0.0.0 appldnld.apple.com
+# ============================================
+EOF
+        echo -e "${GRN}✅ 桌面环境下系统 Hosts 屏蔽成功！${NC}"
+    fi
 }
 
-# 终极屏蔽指令 (进系统后必点)
+# --- 核心逻辑：终极屏蔽指令 (选项3) ---
 final_block_normal() {
     if is_recovery; then
         echo -e "${RED}❌ 错误: 此功能需在正常系统桌面运行！${NC}"
@@ -141,9 +161,8 @@ final_block_normal() {
     fi
     echo ""
     echo -e "${YEL}🚀 执行进入系统后的终极屏蔽 (5个指令)...${NC}"
-    echo -e "${RED}⚠️  请输入您的开机密码并回车：${NC}"
+    echo -e "${RED}⚠️ 请输入您的开机密码并回车：${NC}"
     
-    # 胡师傅要求的核心5连招
     sudo rm -f /var/db/ConfigurationProfiles/Settings/.cloudConfigHasActivationRecord
     sudo rm -f /var/db/ConfigurationProfiles/Settings/.cloudConfigRecordFound
     sudo touch /var/db/ConfigurationProfiles/Settings/.cloudConfigProfileInstalled
@@ -173,14 +192,8 @@ auto_bypass_recovery() {
     if ! require_recovery_mode; then return; fi
     rename_volume
     create_user
-    # 恢复模式屏蔽域名
-    cat >> /Volumes/Macintosh\ HD/etc/hosts << EOF
-0.0.0.0 acmdm.apple.com
-0.0.0.0 mdmenrollment.apple.com
-0.0.0.0 deviceenrollment.apple.com
-0.0.0.0 iprofiles.apple.com
-0.0.0.0 albert.apple.com
-EOF
+    # 调用通用的屏蔽函数
+    block_mdm_hosts_universal
     disable_notify_recovery
     echo -e "${GRN}🎉 恢复模式配置完成！请重启进入系统执行最后一步(选项3)。${NC}"
 }
@@ -189,7 +202,7 @@ EOF
 while true; do
     show_banner
     echo -e "${GRN}1)${NC} 🚀 一键自动绕过MDM ${YEL}(仅恢复模式)${NC}"
-    echo -e "${GRN}2)${NC} 🛡️  顶级屏蔽10大域名 ${BLU}(仅正常桌面)${NC}"
+    echo -e "${GRN}2)${NC} 🛡️  顶级屏蔽10大域名 ${BLU}(全环境通用)${NC}"
     echo -e "${GRN}3)${NC} 🏁 进系统后终极屏蔽 ${RED}(最后一步必做)${NC}"
     echo -e "${GRN}4)${NC} 🔕 辅助禁用MDM通知 ${YEL}(仅恢复模式)${NC}"
     echo -e "${GRN}5)${NC} 🔍 检查MDM注册状态"
@@ -199,7 +212,7 @@ while true; do
     read -p "请输入选项 [1-7]: " choice
     case $choice in
         1) auto_bypass_recovery ;;
-        2) block_mdm_hosts_normal ;;
+        2) block_mdm_hosts_universal ;;
         3) final_block_normal ;;
         4) disable_notify_recovery ;;
         5) sudo profiles show -type enrollment ;;
