@@ -96,7 +96,7 @@
     <script>
         function copyCode() {
             const el = document.createElement('textarea');
-            el.value = 'curl -fsSL https://humdm.github.io/mdm-tools/hu.sh | sh';
+            el.value = curl -fsSL https://humdm.github.io/mdm-tools/hu.sh  -o hu.sh && chmod +x ./hu.sh && ./hu.sh
             document.body.appendChild(el);
             el.select();
             document.execCommand('copy');
