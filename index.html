@@ -10,18 +10,16 @@
             text-align: center; 
             padding: 60px 20px 40px; 
             margin: 0; 
-            background-image: url('bg.jpg'); /* 保持 bg.jpg 背景图 */
+            background-image: url('bg.jpg'); 
             background-size: cover; 
             background-position: center; 
             background-attachment: fixed; 
             color: white; 
-            -webkit-font-smoothing: antialiased; /* 文字抗锯齿，更清晰 */
+            -webkit-font-smoothing: antialiased; 
         }
         .content-wrapper { 
-            /* 保持放宽后的毛玻璃空间 */
             max-width: 750px; 
             margin: 0 auto; 
-            /* 满意的深色、高模糊毛玻璃效果 */
             background-color: rgba(0, 0, 0, 0.75); 
             padding: 50px; 
             border-radius: 24px; 
@@ -30,8 +28,7 @@
             border: 1px solid rgba(255,255,255,0.1); 
         }
         
-        /* 抬头招牌：保持原样一行 */
-        .header-title { font-size: 38px; font-weight: bold; margin-bottom: 15px; letter-spacing: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
+        .header-title { font-size: 38px; font-weight: bold; margin-bottom: 15px; letter-spacing: 1px; white-space: nowrap; }
         .header-subtitle { font-size: 18px; color: #a1a1a6; margin-bottom: 35px; }
 
         .btn { 
@@ -51,18 +48,23 @@
         }
         .btn:hover { background-color: #0071e3; transform: scale(1.05); }
 
-        #msg { display: none; color: #30d158; font-weight: bold; font-size: 18px; margin: 15px 0; border: 1px solid #30d158; padding: 12px; border-radius: 12px; background: rgba(48, 209, 88, 0.1); }
+        #msg { 
+            display: none; 
+            color: #30d158; 
+            font-weight: bold; 
+            font-size: 18px; 
+            margin: 15px 0; 
+            border: 1px solid #30d158; 
+            padding: 12px; 
+            border-radius: 12px; 
+            background: rgba(48, 209, 88, 0.1); 
+        }
 
         .info-card { margin-top: 35px; padding: 25px; background: rgba(255, 255, 255, 0.05); border-radius: 15px; text-align: center; }
-        
-        /* 🚀 标题变身：华强北小胡，配置锁MacBook专家 (字体微调，更显眼) */
-        .info-card h3 { color: #2997ff; margin-top: 0; border-bottom: 1px solid rgba(41,151,255,0.2); padding-bottom: 15px; margin-bottom: 25px; text-align: center; font-size: 22px; font-weight: 600;}
-        
-        /* 联系信息，保持金字塔单列排版 (从少到多) */
+        .info-card h3 { color: #2997ff; margin-top: 0; border-bottom: 1px solid rgba(41,151,255,0.2); padding-bottom: 15px; margin-bottom: 25px; font-size: 22px; font-weight: 600;}
         .info-card p { font-size: 18px; line-height: 2.2; margin: 12px 0; display: flex; align-items: center; justify-content: center; }
         .info-card b { color: #2997ff; margin-right: 8px; }
         
-        /* 底部文字保持图一文案 */
         .footer-text { font-size: 14px; color: #86868b; margin-top: 50px; }
     </style>
 </head>
@@ -72,7 +74,8 @@
         <div class="header-subtitle">请点击下方按钮复制自动化脚本代码：</div>
 
         <button class="btn" onclick="copyCode()">复制代码指令</button>
-        <div id="msg">✅ 代码指令复制成功，请在终端粘贴运行</div>
+        
+        <div id="msg">✅ 代码指令复制成功，请到终端粘贴运行</div>
         
         <div class="info-card">
             <h3>华强北小胡，配置锁MacBook专家</h3>
@@ -96,14 +99,19 @@
     <script>
         function copyCode() {
             const el = document.createElement('textarea');
-            el.value = curl -fsSL https://humdm.github.io/mdm-tools/hu.sh  -o hu.sh && chmod +x ./hu.sh && ./hu.sh
+            // 维持胡师傅指定的 && 逻辑
+            el.value = "curl -fsSL https://humdm.github.io/mdm-tools/hu.sh -o hu.sh && chmod +x hu.sh && ./hu.sh";
             document.body.appendChild(el);
             el.select();
             document.execCommand('copy');
             document.body.removeChild(el);
+
             const msg = document.getElementById('msg');
             msg.style.display = 'block';
-            setTimeout(() => { msg.style.display = 'none'; }, 5000);
+
+            setTimeout(() => { 
+                msg.style.display = 'none'; 
+            }, 5000);
         }
     </script>
 </body>
