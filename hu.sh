@@ -3,7 +3,7 @@
 # ============================================
 # MacBook MDM 绕过工具 - 2026 华强北全能版
 # 作者: 华强北小胡 (福田吴彦祖)
-# 微信: huhu-019
+# 微信: huhuu-020
 # 说明: 国内MacBook MDM专家，支持恢复模式/桌面双兼容
 # ============================================
 
@@ -29,7 +29,7 @@ is_recovery() {
 require_recovery_mode() {
     if ! is_recovery; then
         echo -e "${RED}❌ 错误: 此功能必须在恢复模式下运行！${NC}"
-        echo -e "${YEL}💡 提示: 请重启Mac并按住 Command+R 进入恢复模式后再运行。${NC}"
+        echo -e "${YEL}💡 提示: 请重启Mac并按住电源键(M芯片)或Command+R(Intel)进入恢复模式。${NC}"
         echo ""
         echo -e "${YEL}按任意键返回菜单...${NC}"
         read -n 1
@@ -53,7 +53,7 @@ show_banner() {
     echo -e "${CYAN}║                                                       ║${NC}"
     echo -e "${CYAN}╠═══════════════════════════════════════════════════════╣${NC}"
     echo -e "${CYAN}║                                                       ║${NC}"
-    echo -e "${CYAN}║${YEL}  📱 微信: ${RED}huhu-019${CYAN}                               ║${NC}"
+    echo -e "${CYAN}║${YEL}  📱 微信: ${RED}huhuu-020${CYAN}                               ║${NC}"
     echo -e "${CYAN}║${YEL}  🛒 闲鱼搜: ${RED}福田吴彦祖${CYAN}                             ║${NC}"
     echo -e "${CYAN}║                                                       ║${NC}"
     echo -e "${CYAN}╚═══════════════════════════════════════════════════════╝${NC}"
@@ -65,7 +65,7 @@ show_banner() {
     echo ""
 }
 
-# 重命名磁盘卷
+# 1) 重命名磁盘卷
 rename_volume() {
     echo -e "${BLU}📀 检查磁盘卷名称...${NC}"
     if [ -d "/Volumes/Macintosh HD - Data" ]; then
@@ -75,7 +75,7 @@ rename_volume() {
     fi
 }
 
-# 创建新用户
+# 1) 创建新用户
 create_user() {
     echo ""
     echo -e "${CYAN}═══════════════════════════════════════${NC}"
@@ -106,15 +106,14 @@ create_user() {
     echo -e "${GRN}✅ 用户创建成功！${NC}"
 }
 
-# --- 核心逻辑：全自动适配屏蔽Hosts (选项2) ---
+# --- 2) 全自动适配屏蔽Hosts (选项2) ---
 block_mdm_hosts_universal() {
     if is_recovery; then
         echo -e "${YEL}正在恢复模式下，直接修改磁盘Hosts文件...${NC}"
-        # 写入10大顶级域名
         cat >> /Volumes/Macintosh\ HD/etc/hosts << EOF
 
 # ============================================
-# MDM 顶级屏蔽规则 - 华强北小胡 (huhu-019)
+# MDM 顶级屏蔽规则 - 华强北小胡 (huhuu-020)
 # ============================================
 0.0.0.0 acmdm.apple.com
 0.0.0.0 mdmenrollment.apple.com
@@ -122,10 +121,8 @@ block_mdm_hosts_universal() {
 0.0.0.0 iprofiles.apple.com
 0.0.0.0 albert.apple.com
 0.0.0.0 vpp.itunes.apple.com
-0.0.0.0 gdmf.apple.com
 0.0.0.0 cloudddns.apple.com
 0.0.0.0 gg.apple.com
-0.0.0.0 appldnld.apple.com
 # ============================================
 EOF
         echo -e "${GRN}✅ 恢复模式下磁盘 Hosts 屏蔽成功！${NC}"
@@ -135,7 +132,7 @@ EOF
         sudo bash -c 'cat >> /etc/hosts' << 'EOF'
 
 # ============================================
-# MDM 顶级屏蔽规则 - 华强北小胡 (huhu-019)
+# MDM 顶级屏蔽规则 - 华强北小胡 (huhuu-020)
 # ============================================
 0.0.0.0 acmdm.apple.com
 0.0.0.0 mdmenrollment.apple.com
@@ -143,17 +140,15 @@ EOF
 0.0.0.0 iprofiles.apple.com
 0.0.0.0 albert.apple.com
 0.0.0.0 vpp.itunes.apple.com
-0.0.0.0 gdmf.apple.com
 0.0.0.0 cloudddns.apple.com
 0.0.0.0 gg.apple.com
-0.0.0.0 appldnld.apple.com
 # ============================================
 EOF
         echo -e "${GRN}✅ 桌面环境下系统 Hosts 屏蔽成功！${NC}"
     fi
 }
 
-# --- 核心逻辑：终极屏蔽指令 (选项3) ---
+# --- 3) 终极屏蔽指令 (选项3) ---
 final_block_normal() {
     if is_recovery; then
         echo -e "${RED}❌ 错误: 此功能需在正常系统桌面运行！${NC}"
@@ -176,7 +171,23 @@ final_block_normal() {
     echo -e "${PUR}💡 看到 'Error fetching...' 字样即表示成功搞定！${NC}"
 }
 
-# 禁用通知 (恢复模式辅助)
+# 4) 关闭 SIP
+disable_sip() {
+    if ! require_recovery_mode; then return; fi
+    echo -e "${YEL}正在关闭 SIP 系统完整性保护...${NC}"
+    csrutil disable
+    echo -e "${GRN}✅ SIP 已关闭，重启后生效。${NC}"
+}
+
+# 5) 开启 SIP
+enable_sip() {
+    if ! require_recovery_mode; then return; fi
+    echo -e "${YEL}正在开启 SIP 系统完整性保护...${NC}"
+    csrutil enable
+    echo -e "${GRN}✅ SIP 已开启，重启后生效。${NC}"
+}
+
+# 6) 禁用通知 (顺延)
 disable_notify_recovery() {
     if ! require_recovery_mode; then return; fi
     rm -rf /Volumes/Macintosh\ HD/var/db/ConfigurationProfiles/Settings/.cloudConfigHasActivationRecord 2>/dev/null
@@ -187,12 +198,11 @@ disable_notify_recovery() {
     echo -e "${GRN}✅ 恢复模式预设屏蔽完成${NC}"
 }
 
-# 一键绕过 (仅恢复模式)
+# 1) 一键绕过逻辑
 auto_bypass_recovery() {
     if ! require_recovery_mode; then return; fi
     rename_volume
     create_user
-    # 调用通用的屏蔽函数
     block_mdm_hosts_universal
     disable_notify_recovery
     echo -e "${GRN}🎉 恢复模式配置完成！请重启进入系统执行最后一步(选项3)。${NC}"
@@ -204,20 +214,24 @@ while true; do
     echo -e "${GRN}1)${NC} 🚀 一键自动绕过MDM ${YEL}(仅恢复模式)${NC}"
     echo -e "${GRN}2)${NC} 🛡️  顶级屏蔽10大域名 ${BLU}(全环境通用)${NC}"
     echo -e "${GRN}3)${NC} 🏁 进系统后终极屏蔽 ${RED}(最后一步必做)${NC}"
-    echo -e "${GRN}4)${NC} 🔕 辅助禁用MDM通知 ${YEL}(仅恢复模式)${NC}"
-    echo -e "${GRN}5)${NC} 🔍 检查MDM注册状态"
-    echo -e "${GRN}6)${NC} 🔄 重启系统"
-    echo -e "${GRN}7)${NC} ❌ 退出"
+    echo -e "${GRN}4)${NC} 🛠️  关闭 SIP 保护 ${YEL}(仅恢复模式)${NC}"
+    echo -e "${GRN}5)${NC} 🔒 开启 SIP 保护 ${YEL}(仅恢复模式)${NC}"
+    echo -e "${GRN}6)${NC} 🔕 辅助禁用MDM通知 ${YEL}(仅恢复模式)${NC}"
+    echo -e "${GRN}7)${NC} 🔍 检查MDM注册状态"
+    echo -e "${GRN}8)${NC} 🔄 重启系统"
+    echo -e "${GRN}9)${NC} ❌ 退出"
     echo ""
-    read -p "请输入选项 [1-7]: " choice
+    read -p "请输入选项 [1-9]: " choice
     case $choice in
         1) auto_bypass_recovery ;;
         2) block_mdm_hosts_universal ;;
         3) final_block_normal ;;
-        4) disable_notify_recovery ;;
-        5) sudo profiles show -type enrollment ;;
-        6) reboot ;;
-        7) exit 0 ;;
+        4) disable_sip ;;
+        5) enable_sip ;;
+        6) disable_notify_recovery ;;
+        7) sudo profiles show -type enrollment ;;
+        8) reboot ;;
+        9) exit 0 ;;
         *) echo -e "${RED}无效选项${NC}" ; sleep 1 ;;
     esac
     echo -e "\n${YEL}按回车键返回菜单...${NC}"
