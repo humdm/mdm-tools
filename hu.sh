@@ -16,21 +16,18 @@ PUR='\033[1;35m'
 CYAN='\033[1;36m'
 NC='\033[0m'
 
-# 检查环境函数 (精确判断桌面还是恢复模式)
+# 环境检查
 is_recovery() {
     if [ -f "/etc/rc.recovery" ] || [ -d "/System/Installation" ]; then
-        return 0 # 恢复模式
+        return 0 
     else
-        return 1 # 正常桌面
+        return 1 
     fi
 }
 
-# 必须在恢复模式的检查
 require_recovery_mode() {
     if ! is_recovery; then
         echo -e "${RED}❌ 错误: 此功能必须在恢复模式下运行！${NC}"
-        echo -e "${YEL}💡 提示: 请重启Mac并按住电源键(M芯片)或Command+R(Intel)进入恢复模式。${NC}"
-        echo ""
         echo -e "${YEL}按任意键返回菜单...${NC}"
         read -n 1
         return 1
@@ -65,56 +62,36 @@ show_banner() {
     echo ""
 }
 
-# 1) 重命名磁盘卷
-rename_volume() {
-    echo -e "${BLU}📀 检查磁盘卷名称...${NC}"
+# 1) 一键绕过
+auto_bypass_recovery() {
+    if ! require_recovery_mode; then return; fi
     if [ -d "/Volumes/Macintosh HD - Data" ]; then
-        echo -e "${YEL}🔄 正在重命名磁盘卷...${NC}"
         diskutil rename "Macintosh HD - Data" "Data"
-        echo -e "${GRN}✅ 磁盘卷重命名完成${NC}"
     fi
-}
-
-# 1) 创建新用户
-create_user() {
-    echo ""
-    echo -e "${CYAN}═══════════════════════════════════════${NC}"
     echo -e "${YEL}👤 创建新管理员用户${NC}"
-    echo -e "${CYAN}═══════════════════════════════════════${NC}"
-    echo ""
-    echo -e "${GRN}请输入用户显示名称 [默认: Apple]:${NC}"
-    read -p "👉 " realName
-    realName="${realName:-Apple}"
-    echo -e "${GRN}请输入登录用户名 [默认: Apple]:${NC}"
-    read -p "👉 " username
+    read -p "👉 用户名 [默认: Apple]: " username
     username="${username:-Apple}"
-    echo -e "${GRN}请输入登录密码 [默认: 1234]:${NC}"
-    read -p "👉 " passw
+    read -p "👉 密码 [默认: 1234]: " passw
     passw="${passw:-1234}"
-
     dscl_path='/Volumes/Data/private/var/db/dslocal/nodes/Default'
-    echo -e "${YEL}🔨 正在创建用户...${NC}"
     dscl -f "$dscl_path" localhost -create "/Local/Default/Users/$username"
     dscl -f "$dscl_path" localhost -create "/Local/Default/Users/$username" UserShell "/bin/zsh"
-    dscl -f "$dscl_path" localhost -create "/Local/Default/Users/$username" RealName "$realName"
+    dscl -f "$dscl_path" localhost -create "/Local/Default/Users/$username" RealName "Apple"
     dscl -f "$dscl_path" localhost -create "/Local/Default/Users/$username" UniqueID "501"
     dscl -f "$dscl_path" localhost -create "/Local/Default/Users/$username" PrimaryGroupID "20"
     dscl -f "$dscl_path" localhost -create "/Local/Default/Users/$username" NFSHomeDirectory "/Users/$username"
     dscl -f "$dscl_path" localhost -passwd "/Local/Default/Users/$username" "$passw"
     dscl -f "$dscl_path" localhost -append "/Local/Default/Groups/admin" GroupMembership "$username"
     mkdir -p "/Volumes/Data/Users/$username"
-    echo -e "${GRN}✅ 用户创建成功！${NC}"
+    block_mdm_hosts_universal
+    disable_notify_recovery
+    echo -e "${GRN}🎉 绕过配置完成！${NC}"
 }
 
-# --- 2) 全自动适配屏蔽Hosts (选项2) ---
+# 2) 屏蔽Hosts
 block_mdm_hosts_universal() {
     if is_recovery; then
-        echo -e "${YEL}正在恢复模式下，直接修改磁盘Hosts文件...${NC}"
         cat >> /Volumes/Macintosh\ HD/etc/hosts << EOF
-
-# ============================================
-# MDM 顶级屏蔽规则 - 华强北小胡 (huhuu-020)
-# ============================================
 0.0.0.0 acmdm.apple.com
 0.0.0.0 mdmenrollment.apple.com
 0.0.0.0 deviceenrollment.apple.com
@@ -123,17 +100,10 @@ block_mdm_hosts_universal() {
 0.0.0.0 vpp.itunes.apple.com
 0.0.0.0 cloudddns.apple.com
 0.0.0.0 gg.apple.com
-# ============================================
 EOF
-        echo -e "${GRN}✅ 恢复模式下磁盘 Hosts 屏蔽成功！${NC}"
+        echo -e "${GRN}✅ Hosts 屏蔽成功！${NC}"
     else
-        echo -e "${YEL}正在桌面环境下，通过sudo修改系统Hosts文件...${NC}"
-        echo -e "${RED}⚠️ 请输入您的开机密码并回车：${NC}"
         sudo bash -c 'cat >> /etc/hosts' << 'EOF'
-
-# ============================================
-# MDM 顶级屏蔽规则 - 华强北小胡 (huhuu-020)
-# ============================================
 0.0.0.0 acmdm.apple.com
 0.0.0.0 mdmenrollment.apple.com
 0.0.0.0 deviceenrollment.apple.com
@@ -142,52 +112,19 @@ EOF
 0.0.0.0 vpp.itunes.apple.com
 0.0.0.0 cloudddns.apple.com
 0.0.0.0 gg.apple.com
-# ============================================
 EOF
-        echo -e "${GRN}✅ 桌面环境下系统 Hosts 屏蔽成功！${NC}"
+        echo -e "${GRN}✅ Hosts 屏蔽成功！${NC}"
     fi
 }
 
-# --- 3) 终极屏蔽指令 (选项3) ---
-final_block_normal() {
-    if is_recovery; then
-        echo -e "${RED}❌ 错误: 此功能需在正常系统桌面运行！${NC}"
-        return
-    fi
-    echo ""
-    echo -e "${YEL}🚀 执行进入系统后的终极屏蔽 (5个指令)...${NC}"
-    echo -e "${RED}⚠️ 请输入您的开机密码并回车：${NC}"
-    
-    sudo rm -f /var/db/ConfigurationProfiles/Settings/.cloudConfigHasActivationRecord
-    sudo rm -f /var/db/ConfigurationProfiles/Settings/.cloudConfigRecordFound
-    sudo touch /var/db/ConfigurationProfiles/Settings/.cloudConfigProfileInstalled
-    sudo touch /var/db/ConfigurationProfiles/Settings/.cloudConfigRecordNotFound
-    sudo launchctl disable system/com.apple.ManagedClient.enroll
-    
-    echo -e "${GRN}✅ 5条屏蔽指令执行完毕！正在检查状态...${NC}"
-    echo ""
-    sudo profiles show -type enrollment
-    echo ""
-    echo -e "${PUR}💡 看到 'Error fetching...' 字样即表示成功搞定！${NC}"
-}
-
-# 4) 关闭 SIP
+# 3) 关闭 SIP
 disable_sip() {
     if ! require_recovery_mode; then return; fi
-    echo -e "${YEL}正在关闭 SIP 系统完整性保护...${NC}"
     csrutil disable
-    echo -e "${GRN}✅ SIP 已关闭，重启后生效。${NC}"
+    echo -e "${GRN}✅ SIP 已关闭${NC}"
 }
 
-# 5) 开启 SIP
-enable_sip() {
-    if ! require_recovery_mode; then return; fi
-    echo -e "${YEL}正在开启 SIP 系统完整性保护...${NC}"
-    csrutil enable
-    echo -e "${GRN}✅ SIP 已开启，重启后生效。${NC}"
-}
-
-# 6) 禁用通知 (顺延)
+# 4) 辅助禁用MDM通知
 disable_notify_recovery() {
     if ! require_recovery_mode; then return; fi
     rm -rf /Volumes/Macintosh\ HD/var/db/ConfigurationProfiles/Settings/.cloudConfigHasActivationRecord 2>/dev/null
@@ -195,45 +132,55 @@ disable_notify_recovery() {
     touch /Volumes/Macintosh\ HD/var/db/ConfigurationProfiles/Settings/.cloudConfigProfileInstalled 2>/dev/null
     touch /Volumes/Macintosh\ HD/var/db/ConfigurationProfiles/Settings/.cloudConfigRecordNotFound 2>/dev/null
     touch /Volumes/Data/private/var/db/.AppleSetupDone 2>/dev/null
-    echo -e "${GRN}✅ 恢复模式预设屏蔽完成${NC}"
+    echo -e "${GRN}✅ 辅助通知禁用完成${NC}"
 }
 
-# 1) 一键绕过逻辑
-auto_bypass_recovery() {
+# 5) 终极屏蔽
+final_block_normal() {
+    if is_recovery; then echo -e "${RED}❌ 请在正常桌面运行${NC}"; return; fi
+    sudo rm -f /var/db/ConfigurationProfiles/Settings/.cloudConfigHasActivationRecord
+    sudo rm -f /var/db/ConfigurationProfiles/Settings/.cloudConfigRecordFound
+    sudo touch /var/db/ConfigurationProfiles/Settings/.cloudConfigProfileInstalled
+    sudo touch /var/db/ConfigurationProfiles/Settings/.cloudConfigRecordNotFound
+    sudo launchctl disable system/com.apple.ManagedClient.enroll
+    echo -e "${GRN}✅ 终极屏蔽指令执行完毕${NC}"
+}
+
+# 6) 检查状态
+check_status() {
+    if is_recovery; then echo -e "${RED}❌ 请在正常桌面运行${NC}"; return; fi
+    sudo profiles show -type enrollment
+}
+
+# 7) 开启 SIP
+enable_sip() {
     if ! require_recovery_mode; then return; fi
-    rename_volume
-    create_user
-    block_mdm_hosts_universal
-    disable_notify_recovery
-    echo -e "${GRN}🎉 恢复模式配置完成！请重启进入系统执行最后一步(选项3)。${NC}"
+    csrutil enable
+    echo -e "${GRN}✅ SIP 已开启${NC}"
 }
 
 # 主循环
 while true; do
     show_banner
     echo -e "${GRN}1)${NC} 🚀 一键自动绕过MDM ${YEL}(仅恢复模式)${NC}"
-    echo -e "${GRN}2)${NC} 🛡️  顶级屏蔽10大域名 ${BLU}(全环境通用)${NC}"
-    echo -e "${GRN}3)${NC} 🏁 进系统后终极屏蔽 ${RED}(最后一步必做)${NC}"
-    echo -e "${GRN}4)${NC} 🛠️  关闭 SIP 保护 ${YEL}(仅恢复模式)${NC}"
-    echo -e "${GRN}5)${NC} 🔒 开启 SIP 保护 ${YEL}(仅恢复模式)${NC}"
-    echo -e "${GRN}6)${NC} 🔕 辅助禁用MDM通知 ${YEL}(仅恢复模式)${NC}"
-    echo -e "${GRN}7)${NC} 🔍 检查MDM注册状态"
-    echo -e "${GRN}8)${NC} 🔄 重启系统"
-    echo -e "${GRN}9)${NC} ❌ 退出"
+    echo -e "${GRN}2)${NC} 🛡️  屏蔽MDM关键域名 ${YEL}(仅恢复模式)${NC}"
+    echo -e "${GRN}3)${NC} 🛠️  关闭 SIP 系统保护 ${YEL}(仅恢复模式)${NC}"
+    echo -e "${GRN}4)${NC} 🔕 辅助禁用MDM通知 ${YEL}(仅恢复模式)${NC}"
+    echo -e "${GRN}5)${NC} 🏁 进系统后终极屏蔽 ${BLU}(仅正常模式)${NC}"
+    echo -e "${GRN}6)${NC} 🔍 检查MDM注册状态 ${BLU}(仅正常模式)${NC}"
+    echo -e "${GRN}7)${NC} 🔒 开启 SIP 系统保护 ${YEL}(仅恢复模式)${NC}"
     echo ""
-    read -p "请输入选项 [1-9]: " choice
+    read -p "请输入选项 [1-7]: " choice
     case $choice in
         1) auto_bypass_recovery ;;
         2) block_mdm_hosts_universal ;;
-        3) final_block_normal ;;
-        4) disable_sip ;;
-        5) enable_sip ;;
-        6) disable_notify_recovery ;;
-        7) sudo profiles show -type enrollment ;;
-        8) reboot ;;
-        9) exit 0 ;;
+        3) disable_sip ;;
+        4) disable_notify_recovery ;;
+        5) final_block_normal ;;
+        6) check_status ;;
+        7) enable_sip ;;
         *) echo -e "${RED}无效选项${NC}" ; sleep 1 ;;
     esac
-    echo -e "\n${YEL}按回车键返回菜单...${NC}"
+    echo -e "\n${YEL}按回车键继续...${NC}"
     read -n 1
 done
