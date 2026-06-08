@@ -159,6 +159,15 @@ enable_sip() {
     echo -e "${GRN}✅ SIP 已开启${NC}"
 }
 
+# 8) 清除配置缓存
+clean_cache_and_lock_recovery() {
+    if ! require_recovery_mode; then return; fi
+    echo -e "${YEL}🧹 正在清除本地配置缓存...${NC}"
+    rm -rf /Volumes/Data/private/var/db/ConfigurationProfiles/*
+    chflags schg /Volumes/Data/private/var/db/ConfigurationProfiles/
+    echo -e "${GRN}✅ 配置缓存已清除${NC}"
+}
+
 # 主循环
 while true; do
     show_banner
@@ -169,8 +178,9 @@ while true; do
     echo -e "${GRN}5)${NC} 🏁 进系统后终极屏蔽 ${BLU}(仅正常模式)${NC}"
     echo -e "${GRN}6)${NC} 🔍 检查MDM注册状态 ${BLU}(仅正常模式)${NC}"
     echo -e "${GRN}7)${NC} 🔒 开启 SIP 系统保护 ${YEL}(仅恢复模式)${NC}"
+    echo -e "${GRN}8)${NC} 清除配置缓存"
     echo ""
-    read -p "请输入选项 [1-7]: " choice
+    read -p "请输入选项 [1-8]: " choice
     case $choice in
         1) auto_bypass_recovery ;;
         2) block_mdm_hosts_universal ;;
@@ -179,6 +189,7 @@ while true; do
         5) final_block_normal ;;
         6) check_status ;;
         7) enable_sip ;;
+        8) clean_cache_and_lock_recovery ;;
         *) echo -e "${RED}无效选项${NC}" ; sleep 1 ;;
     esac
     echo -e "\n${YEL}按回车键继续...${NC}"
