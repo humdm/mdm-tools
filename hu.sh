@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # ============================================
-# MacBook MDM  - 2026.6.8更新
-# 技术: 小胡同学 
+# MacBook MDM 绕过工具 - 2026 华强北全能版
+# 作者: 华强北小胡 (福田吴彦祖)
 # 微信: huhuu-020
 # 说明: 国内MacBook MDM专家，支持恢复模式/桌面双兼容
 # ============================================
@@ -40,7 +40,7 @@ show_banner() {
     clear
     echo -e "${CYAN}╔═══════════════════════════════════════════════════════╗${NC}"
     echo -e "${CYAN}║                                                       ║${NC}"
-    echo -e "${CYAN}║${YEL}     欢迎使用 Mac MDM 绕过工具 - 2026.6.8          ${CYAN}║${NC}"
+    echo -e "${CYAN}║${YEL}     欢迎使用 MacBook MDM 绕过工具 - 全能版          ${CYAN}║${NC}"
     echo -e "${CYAN}║                                                       ║${NC}"
     echo -e "${CYAN}╠═══════════════════════════════════════════════════════╣${NC}"
     echo -e "${CYAN}║                                                       ║${NC}"
@@ -88,7 +88,7 @@ auto_bypass_recovery() {
     echo -e "${GRN}🎉 绕过配置完成！${NC}"
 }
 
-# 2) 屏蔽Hosts（这里完全保留你原本的策略，用来彻底锁死域名）
+# 2) 屏蔽Hosts
 block_mdm_hosts_universal() {
     if is_recovery; then
         cat >> /Volumes/Macintosh\ HD/etc/hosts << EOF
@@ -159,23 +159,6 @@ enable_sip() {
     echo -e "${GRN}✅ SIP 已开启${NC}"
 }
 
-# 8) 验证服务器 (动态擦除 albert 屏蔽行)
-clear_albert_server() {
-    echo -e "${YEL}🔄 正在初始化验证服务器通道...${NC}"
-    if is_recovery; then
-        if [ -f "/Volumes/Macintosh HD/etc/hosts" ]; then
-            sed -i '' '/albert.apple.com/d' "/Volumes/Macintosh HD/etc/hosts"
-            echo -e "${GRN}✅ [恢复模式] 验证服务器连接已就绪！${NC}"
-        else
-            echo -e "${RED}❌ 未找到目标系统文件，请检查系统盘挂载状态。${NC}"
-        fi
-    else
-        sudo sed -i '' '/albert.apple.com/d' /etc/hosts
-        sudo killall -HUP mDNSResponder
-        echo -e "${GRN}✅ [桌面模式] 验证服务器连接已就绪，DNS 缓存已同步刷新！${NC}"
-    fi
-}
-
 # 主循环
 while true; do
     show_banner
@@ -186,9 +169,8 @@ while true; do
     echo -e "${GRN}5)${NC} 🏁 进系统后终极屏蔽 ${BLU}(仅正常模式)${NC}"
     echo -e "${GRN}6)${NC} 🔍 检查MDM注册状态 ${BLU}(仅正常模式)${NC}"
     echo -e "${GRN}7)${NC} 🔒 开启 SIP 系统保护 ${YEL}(仅恢复模式)${NC}"
-    echo -e "${GRN}8)${NC} 🌐 验证服务器 ${PUR}(双模式通道)${NC}"
     echo ""
-    read -p "请输入选项 [1-8]: " choice
+    read -p "请输入选项 [1-7]: " choice
     case $choice in
         1) auto_bypass_recovery ;;
         2) block_mdm_hosts_universal ;;
@@ -197,9 +179,8 @@ while true; do
         5) final_block_normal ;;
         6) check_status ;;
         7) enable_sip ;;
-        8) clear_albert_server ;;
         *) echo -e "${RED}无效选项${NC}" ; sleep 1 ;;
     esac
-    echo -e "\n${YEL}按任意键继续...${NC}"
+    echo -e "\n${YEL}按回车键继续...${NC}"
     read -n 1
 done
