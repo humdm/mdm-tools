@@ -91,7 +91,19 @@ auto_bypass_recovery() {
 # 2) 屏蔽Hosts
 block_mdm_hosts_universal() {
     if is_recovery; then
-        cat >> /Volumes/Macintosh\ HD/etc/hosts << EOF
+        # 智能寻找并匹配实际的系统盘路径位置
+        local target_hosts=""
+        if [ -f "/Volumes/Macintosh HD/etc/hosts" ]; then
+            target_hosts="/Volumes/Macintosh HD/etc/hosts"
+        elif [ -f "/Volumes/Data/etc/hosts" ]; then
+            target_hosts="/Volumes/Data/etc/hosts"
+        else
+            # 兜底查找包含 etc/hosts 的挂载卷
+            target_hosts=$(find /Volumes -maxdepth 3 -path "*/etc/hosts" 2>/dev/null | head -n 1)
+        fi
+
+        if [ -n "$target_hosts" ] && [ -f "$target_hosts" ]; then
+            cat >> "$target_hosts" << EOF
 0.0.0.0 acmdm.apple.com
 0.0.0.0 mdmenrollment.apple.com
 0.0.0.0 deviceenrollment.apple.com
@@ -101,7 +113,10 @@ block_mdm_hosts_universal() {
 0.0.0.0 cloudddns.apple.com
 0.0.0.0 gg.apple.com
 EOF
-        echo -e "${GRN}✅ Hosts 屏蔽成功！${NC}"
+            echo -e "${GRN}✅ Hosts 屏蔽成功！${NC}"
+        else
+            echo -e "${RED}❌ 错误: 未能在恢复模式下找到系统主盘的 hosts 文件！${NC}"
+        fi
     else
         sudo bash -c 'cat >> /etc/hosts' << 'EOF'
 0.0.0.0 acmdm.apple.com
@@ -127,10 +142,16 @@ disable_sip() {
 # 4) 辅助禁用MDM通知
 disable_notify_recovery() {
     if ! require_recovery_mode; then return; fi
+    # 兼容多路径删除
     rm -rf /Volumes/Macintosh\ HD/var/db/ConfigurationProfiles/Settings/.cloudConfigHasActivationRecord 2>/dev/null
+    rm -rf /Volumes/Data/var/db/ConfigurationProfiles/Settings/.cloudConfigHasActivationRecord 2>/dev/null
     rm -rf /Volumes/Macintosh\ HD/var/db/ConfigurationProfiles/Settings/.cloudConfigRecordFound 2>/dev/null
+    rm -rf /Volumes/Data/var/db/ConfigurationProfiles/Settings/.cloudConfigRecordFound 2>/dev/null
+    
     touch /Volumes/Macintosh\ HD/var/db/ConfigurationProfiles/Settings/.cloudConfigProfileInstalled 2>/dev/null
+    touch /Volumes/Data/var/db/ConfigurationProfiles/Settings/.cloudConfigProfileInstalled 2>/dev/null
     touch /Volumes/Macintosh\ HD/var/db/ConfigurationProfiles/Settings/.cloudConfigRecordNotFound 2>/dev/null
+    touch /Volumes/Data/var/db/ConfigurationProfiles/Settings/.cloudConfigRecordNotFound 2>/dev/null
     touch /Volumes/Data/private/var/db/.AppleSetupDone 2>/dev/null
     echo -e "${GRN}✅ 辅助通知禁用完成${NC}"
 }
@@ -162,10 +183,22 @@ enable_sip() {
 # 8) 清除配置缓存
 clean_cache_and_lock_recovery() {
     if ! require_recovery_mode; then return; fi
-    echo -e "${YEL}🧹 正在清除本地配置缓存...${NC}"
-    rm -rf /Volumes/Data/private/var/db/ConfigurationProfiles/*
-    chflags schg /Volumes/Data/private/var/db/ConfigurationProfiles/
-    echo -e "${GRN}✅ 配置缓存已清除${NC}"
+    
+    # 自动寻找正确的 Data 盘路径进行清除和锁定
+    local target_dir=""
+    if [ -d "/Volumes/Data/private/var/db/ConfigurationProfiles" ]; then
+        target_dir="/Volumes/Data/private/var/db/ConfigurationProfiles"
+    elif [ -d "/Volumes/Macintosh HD/private/var/db/ConfigurationProfiles" ]; then
+        target_dir="/Volumes/Macintosh HD/private/var/db/ConfigurationProfiles"
+    fi
+
+    if [ -n "$target_dir" ]; then
+        rm -rf "$target_dir"/*
+        chflags schg "$target_dir"
+        echo -e "${GRN}✅ 配置缓存已清除${NC}"
+    else
+        echo -e "${RED}❌ 错误: 未能在恢复模式下找到配置缓存目录！${NC}"
+    fi
 }
 
 # 主循环
