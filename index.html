@@ -8,7 +8,7 @@
         body { 
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
             text-align: center; 
-            padding: 60px 20px 40px; 
+            padding: 90px 20px 40px; /* 顶部加高，给右上角电话留出空间 */
             margin: 0; 
             background-image: url('bg.jpg'); 
             background-size: cover; 
@@ -16,16 +16,45 @@
             background-attachment: fixed; 
             color: white; 
             -webkit-font-smoothing: antialiased; 
+            position: relative;
         }
+
+        /* 右上角电话样式 */
+        .top-phone {
+            position: absolute;
+            top: 25px;
+            right: 30px;
+            font-size: 15px;
+            color: #a1a1a6;
+            background: rgba(255, 255, 255, 0.08);
+            padding: 8px 16px;
+            border-radius: 20px;
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+        .top-phone:hover {
+            color: #2997ff;
+            border-color: #2997ff;
+            background: rgba(41, 151, 255, 0.1);
+        }
+        .top-phone b {
+            color: #2997ff;
+            margin-right: 4px;
+        }
+
         .content-wrapper { 
             max-width: 750px; 
             margin: 0 auto; 
             background-color: rgba(0, 0, 0, 0.75); 
-            padding: 50px; 
+            padding: 50px 50px 65px; /* 底部加深，给黑框内的日期留出空间 */
             border-radius: 24px; 
             backdrop-filter: blur(15px); 
             box-shadow: 0 25px 60px rgba(0,0,0,0.6); 
             border: 1px solid rgba(255,255,255,0.1); 
+            position: relative; /* 子绝父相 */
         }
         
         .header-title { font-size: 38px; font-weight: bold; margin-bottom: 15px; letter-spacing: 1px; white-space: nowrap; }
@@ -61,14 +90,36 @@
         }
 
         .info-card { margin-top: 35px; padding: 25px; background: rgba(255, 255, 255, 0.05); border-radius: 15px; text-align: center; }
-        .info-card h3 { color: #2997ff; margin-top: 0; border-bottom: 1px solid rgba(41,151,255,0.2); padding-bottom: 15px; margin-bottom: 25px; font-size: 22px; font-weight: 600;}
+        .info-card h3 { color: #ffffff; margin-top: 0; border-bottom: 1px solid rgba(255,255,255,0.15); padding-bottom: 15px; margin-bottom: 25px; font-size: 22px; font-weight: 600;}
         .info-card p { font-size: 18px; line-height: 2.2; margin: 12px 0; display: flex; align-items: center; justify-content: center; }
-        .info-card b { color: #2997ff; margin-right: 8px; }
+        .info-card b { color: #ffffff; margin-right: 8px; font-weight: normal; }
+        .info-card span { color: #e8e8ed; }
         
         .footer-text { font-size: 14px; color: #86868b; margin-top: 50px; }
+
+        /* 精准固定在黑框右下角，且修改为清晰的亮白色字体 */
+        .date-text { 
+            position: absolute;
+            bottom: 20px;
+            right: 30px;
+            font-size: 13px; 
+            color: rgba(255, 255, 255, 0.45); /* 亮白色半透明，黑底上非常醒目且高级 */
+            letter-spacing: 0.5px; 
+        }
+
+        /* 手机端响应式防止排版错乱 */
+        @media (max-width: 480px) {
+            body { padding-top: 100px; }
+            .top-phone { top: 20px; right: 20px; font-size: 13px; padding: 6px 12px; }
+            .header-title { white-space: normal; font-size: 28px; }
+            .date-text { right: 20px; bottom: 15px; font-size: 11px; }
+        }
     </style>
 </head>
 <body>
+
+    <a href="tel:18682333383" class="top-phone">☎️ <b>联系电话：</b>186 8233 3383</a>
+
     <div class="content-wrapper">
         <div class="header-title">欢迎来到我们的 MacBook 服务页面</div>
         <div class="header-subtitle">请点击下方按钮复制自动化脚本代码：</div>
@@ -80,26 +131,22 @@
         <div class="info-card">
             <h3>华强北小胡，配置锁MacBook专家</h3>
             
-            <p>📲 <b>客服微信：</b><span>huhuu-0120/span></p>
+            <p>📲 <b>客服微信：</b><span>huhuu-020</span></p>
             
             <p>🎵 <b>抖音搜索：</b><span>华强北小胡</span></p>
             
-            <p>☎️ <b>联系电话：</b><span>186 8233 3383</span></p>
-            
-            <p>📺 <b>哔哩哔哩：</b><span>华强北小胡 (技术展示)</span></p>
-            
-            <p>🌟 <b>咸鱼店铺：</b><span>福田吴彦祖 / 胡师傅爱卖手机</span></p>
-            
-            <p>🔒 <b>核心技术：</b><span>国内最早配置锁先锋 / 极速绕过</span></p>
+            <p>🌟 <b>闲鱼店铺：</b><span>福田吴彦祖</span></p>
         </div>
+
+        <div class="date-text" id="current-date"></div>
     </div>
 
     <div class="footer-text">让我们一起探索 MacBook 的未来，解锁你的技术世界！</div>
 
     <script>
+        // 复制代码指令逻辑
         function copyCode() {
             const el = document.createElement('textarea');
-            // 维持胡师傅指定的 && 逻辑
             el.value = "curl -fsSL https://humdm.github.io/mdm-tools/hu.sh -o hu.sh && chmod +x hu.sh && ./hu.sh";
             document.body.appendChild(el);
             el.select();
@@ -113,6 +160,18 @@
                 msg.style.display = 'none'; 
             }, 5000);
         }
+
+        // 自动获取并在黑框右下角显示今日日期
+        function displayTodayDate() {
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const day = String(today.getDate()).padStart(2, '0');
+            document.getElementById('current-date').innerText = `${year}年${month}月${day}日`;
+        }
+        
+        // 页面加载时自动运行日期函数
+        displayTodayDate();
     </script>
 </body>
 </html>
