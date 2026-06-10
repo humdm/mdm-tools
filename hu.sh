@@ -18,11 +18,7 @@ NC='\033[0m'
 
 # 环境检查
 is_recovery() {
-    if [ -f "/etc/rc.recovery" ] || [ -d "/System/Installation" ]; then
-        return 0 
-    else
-        return 1 
-    fi
+    [ -f "/etc/rc.recovery" ] || [ -d "/System/Installation" ]
 }
 
 require_recovery_mode() {
@@ -37,8 +33,8 @@ require_recovery_mode() {
 
 # 显示欢迎信息
 show_banner() {
-    # 修复：防止恢复模式缺少 clear 命令报错
-    command -v clear >/dev/null 2>&1 && clear || printf "\033c"
+    # 使用 printf 替代 clear 以兼容恢复模式
+    printf "\033c"
     echo -e "${CYAN}╔═══════════════════════════════════════════════════════╗${NC}"
     echo -e "${CYAN}║                                                       ║${NC}"
     echo -e "${CYAN}║${YEL}     欢迎使用 MacBook MDM 绕过工具 - 全能版          ${CYAN}║${NC}"
@@ -86,23 +82,16 @@ auto_bypass_recovery() {
     mkdir -p "/Volumes/Data/Users/$username"
     block_mdm_hosts_universal
     disable_notify_recovery
-    echo -e "${GRN}🎉 绕过配置完成！${NC}"
 }
 
 # 2) 屏蔽Hosts
 block_mdm_hosts_universal() {
-    if is_recovery; then
-        local target_hosts=""
-        if [ -f "/Volumes/Macintosh HD/etc/hosts" ]; then
-            target_hosts="/Volumes/Macintosh HD/etc/hosts"
-        elif [ -f "/Volumes/Data/etc/hosts" ]; then
-            target_hosts="/Volumes/Data/etc/hosts"
-        else
-            target_hosts=$(find /Volumes -maxdepth 3 -path "*/etc/hosts" 2>/dev/null | head -n 1)
-        fi
-
-        if [ -n "$target_hosts" ] && [ -f "$target_hosts" ]; then
-            cat >> "$target_hosts" << EOF
+    local target_hosts=""
+    if [ -f "/Volumes/Macintosh HD/etc/hosts" ]; then target_hosts="/Volumes/Macintosh HD/etc/hosts"
+    elif [ -f "/Volumes/Data/etc/hosts" ]; then target_hosts="/Volumes/Data/etc/hosts"
+    else target_hosts=$(find /Volumes -maxdepth 3 -path "*/etc/hosts" 2>/dev/null | head -n 1); fi
+    
+    cat >> "$target_hosts" << EOF
 0.0.0.0 acmdm.apple.com
 0.0.0.0 mdmenrollment.apple.com
 0.0.0.0 deviceenrollment.apple.com
@@ -112,57 +101,28 @@ block_mdm_hosts_universal() {
 0.0.0.0 cloudddns.apple.com
 0.0.0.0 gg.apple.com
 EOF
-            echo -e "${GRN}✅ Hosts 屏蔽成功！${NC}"
-        else
-            echo -e "${RED}❌ 错误: 未能在恢复模式下找到系统主盘的 hosts 文件！${NC}"
-        fi
-    else
-        sudo bash -c 'cat >> /etc/hosts' << 'EOF'
-0.0.0.0 acmdm.apple.com
-0.0.0.0 mdmenrollment.apple.com
-0.0.0.0 deviceenrollment.apple.com
-0.0.0.0 iprofiles.apple.com
-0.0.0.0 albert.apple.com
-0.0.0.0 vpp.itunes.apple.com
-0.0.0.0 cloudddns.apple.com
-0.0.0.0 gg.apple.com
-EOF
-        echo -e "${GRN}✅ Hosts 屏蔽成功！${NC}"
-    fi
 }
 
-# 3) 关闭 SIP (手动版)
+# 3) 关闭 SIP
 disable_sip() {
     if ! require_recovery_mode; then return; fi
     csrutil disable
-    echo -e "${YEL}如上面已操作，请检查系统提示。${NC}"
 }
 
 # 4) 辅助禁用MDM通知
 disable_notify_recovery() {
     if ! require_recovery_mode; then return; fi
-    rm -rf /Volumes/Macintosh\ HD/var/db/ConfigurationProfiles/Settings/.cloudConfigHasActivationRecord 2>/dev/null
-    rm -rf /Volumes/Data/var/db/ConfigurationProfiles/Settings/.cloudConfigHasActivationRecord 2>/dev/null
-    rm -rf /Volumes/Macintosh\ HD/var/db/ConfigurationProfiles/Settings/.cloudConfigRecordFound 2>/dev/null
-    rm -rf /Volumes/Data/var/db/ConfigurationProfiles/Settings/.cloudConfigRecordFound 2>/dev/null
-    
-    touch /Volumes/Macintosh\ HD/var/db/ConfigurationProfiles/Settings/.cloudConfigProfileInstalled 2>/dev/null
-    touch /Volumes/Data/var/db/ConfigurationProfiles/Settings/.cloudConfigProfileInstalled 2>/dev/null
-    touch /Volumes/Macintosh\ HD/var/db/ConfigurationProfiles/Settings/.cloudConfigRecordNotFound 2>/dev/null
-    touch /Volumes/Data/var/db/ConfigurationProfiles/Settings/.cloudConfigRecordNotFound 2>/dev/null
+    rm -rf /Volumes/Macintosh\ HD/var/db/ConfigurationProfiles/Settings/.cloudConfig* 2>/dev/null
+    rm -rf /Volumes/Data/var/db/ConfigurationProfiles/Settings/.cloudConfig* 2>/dev/null
     touch /Volumes/Data/private/var/db/.AppleSetupDone 2>/dev/null
-    echo -e "${GRN}✅ 辅助通知禁用完成${NC}"
 }
 
 # 5) 终极屏蔽
 final_block_normal() {
     if is_recovery; then echo -e "${RED}❌ 请在正常桌面运行${NC}"; return; fi
-    sudo rm -f /var/db/ConfigurationProfiles/Settings/.cloudConfigHasActivationRecord
-    sudo rm -f /var/db/ConfigurationProfiles/Settings/.cloudConfigRecordFound
+    sudo rm -f /var/db/ConfigurationProfiles/Settings/.cloudConfig*
     sudo touch /var/db/ConfigurationProfiles/Settings/.cloudConfigProfileInstalled
-    sudo touch /var/db/ConfigurationProfiles/Settings/.cloudConfigRecordNotFound
     sudo launchctl disable system/com.apple.ManagedClient.enroll
-    echo -e "${GRN}✅ 终极屏蔽指令执行完毕${NC}"
 }
 
 # 6) 检查状态
@@ -171,7 +131,7 @@ check_status() {
     sudo profiles show -type enrollment
 }
 
-# 7) 开启 SIP (手动版)
+# 7) 开启 SIP
 enable_sip() {
     if ! require_recovery_mode; then return; fi
     csrutil enable
@@ -180,33 +140,21 @@ enable_sip() {
 # 8) 清除配置缓存
 clean_cache_and_lock_recovery() {
     if ! require_recovery_mode; then return; fi
-    
-    local target_dir=""
-    if [ -d "/Volumes/Data/private/var/db/ConfigurationProfiles" ]; then
-        target_dir="/Volumes/Data/private/var/db/ConfigurationProfiles"
-    elif [ -d "/Volumes/Macintosh HD/private/var/db/ConfigurationProfiles" ]; then
-        target_dir="/Volumes/Macintosh HD/private/var/db/ConfigurationProfiles"
-    fi
-
-    if [ -n "$target_dir" ]; then
-        rm -rf "$target_dir"/*
-        chflags schg "$target_dir"
-        echo -e "${GRN}✅ 配置缓存已清除${NC}"
-    else
-        echo -e "${RED}❌ 错误: 未能在恢复模式下找到配置缓存目录！${NC}"
-    fi
+    local target_dir="/Volumes/Data/private/var/db/ConfigurationProfiles"
+    rm -rf "$target_dir"/*
+    chflags schg "$target_dir"
 }
 
 # 主循环
 while true; do
     show_banner
-    echo -e "${GRN}1)${NC} 🚀 一键自动绕过MDM ${YEL}(仅恢复模式)${NC}"
-    echo -e "${GRN}2)${NC} 🛡️  屏蔽MDM关键域名 ${YEL}(仅恢复模式)${NC}"
-    echo -e "${GRN}3)${NC} 🛠️  关闭 SIP 系统保护 ${YEL}(仅恢复模式)${NC}"
-    echo -e "${GRN}4)${NC} 🔕 辅助禁用MDM通知 ${YEL}(仅恢复模式)${NC}"
-    echo -e "${GRN}5)${NC} 🏁 进系统后终极屏蔽 ${BLU}(仅正常模式)${NC}"
-    echo -e "${GRN}6)${NC} 🔍 检查MDM注册状态 ${BLU}(仅正常模式)${NC}"
-    echo -e "${GRN}7)${NC} 🔒 开启 SIP 系统保护 ${YEL}(仅恢复模式)${NC}"
+    echo -e "${GRN}1)${NC} 🚀 一键自动绕过MDM"
+    echo -e "${GRN}2)${NC} 🛡️  屏蔽MDM关键域名"
+    echo -e "${GRN}3)${NC} 🛠️  关闭 SIP 系统保护"
+    echo -e "${GRN}4)${NC} 🔕 辅助禁用MDM通知"
+    echo -e "${GRN}5)${NC} 🏁 进系统后终极屏蔽"
+    echo -e "${GRN}6)${NC} 🔍 检查MDM注册状态"
+    echo -e "${GRN}7)${NC} 🔒 开启 SIP 系统保护"
     echo -e "${GRN}8)${NC} 清除配置缓存"
     echo ""
     read -p "请输入选项 [1-8]: " choice < /dev/tty
