@@ -7,73 +7,42 @@
 # 说明: 国内MacBook MDM专家，支持恢复模式/桌面双兼容
 # ============================================
 
-# 颜色定义
 RED='\033[1;31m'
 GRN='\033[1;32m'
 BLU='\033[1;34m'
 YEL='\033[1;33m'
-PUR='\033[1;35m'
 CYAN='\033[1;36m'
 NC='\033[0m'
 
+# 核心：自动获取系统数据分区挂载点
+get_data_mount() {
+    local mount=$(df | grep -E "Data|Macintosh HD" | awk '{print $NF}' | head -n 1)
+    echo "${mount:-/Volumes/Data}"
+}
+
 # 环境检查
 is_recovery() {
-    if [ -f "/etc/rc.recovery" ] || [ -d "/System/Installation" ]; then
-        return 0 
-    else
-        return 1 
-    fi
-}
-
-require_recovery_mode() {
-    if ! is_recovery; then
-        echo -e "${RED}❌ 错误: 此功能必须在恢复模式下运行！${NC}"
-        echo -e "${YEL}按任意键返回菜单...${NC}"
-        read -n 1 < /dev/tty
-        return 1
-    fi
-    return 0
-}
-
-# 显示欢迎信息
-show_banner() {
-    clear
-    echo -e "${CYAN}╔═══════════════════════════════════════════════════════╗${NC}"
-    echo -e "${CYAN}║                                                       ║${NC}"
-    echo -e "${CYAN}║${YEL}     欢迎使用 MacBook MDM 绕过工具 - 全能版          ${CYAN}║${NC}"
-    echo -e "${CYAN}║                                                       ║${NC}"
-    echo -e "${CYAN}╠═══════════════════════════════════════════════════════╣${NC}"
-    echo -e "${CYAN}║                                                       ║${NC}"
-    echo -e "${CYAN}║${GRN}  🔒 华强北小胡 - 国内MacBook MDM专家               ${CYAN}║${NC}"
-    echo -e "${CYAN}║${GRN}  🚀 国内最早专售MacBook企业机MDM配置锁             ${CYAN}║${NC}"
-    echo -e "${CYAN}║${GRN}  🌟 最了解MDM，没有之一！                          ${CYAN}║${NC}"
-    echo -e "${CYAN}║                                                       ║${NC}"
-    echo -e "${CYAN}╠═══════════════════════════════════════════════════════╣${NC}"
-    echo -e "${CYAN}║                                                       ║${NC}"
-    echo -e "${CYAN}║${YEL}  📱 微信: ${RED}huhuu-020${CYAN}                               ║${NC}"
-    echo -e "${CYAN}║${YEL}  🛒 闲鱼搜: ${RED}福田吴彦祖${CYAN}                             ║${NC}"
-    echo -e "${CYAN}║                                                       ║${NC}"
-    echo -e "${CYAN}╚═══════════════════════════════════════════════════════╝${NC}"
-    if is_recovery; then
-        echo -e "${YEL}📍 当前状态: [ 恢复模式 - RECOVERY ]${NC}"
-    else
-        echo -e "${GRN}📍 当前状态: [ 正常系统 - MACOS ]${NC}"
-    fi
-    echo ""
+    [ -f "/etc/rc.recovery" ] || [ -d "/System/Installation" ]
 }
 
 # 1) 一键绕过
 auto_bypass_recovery() {
-    if ! require_recovery_mode; then return; fi
-    if [ -d "/Volumes/Macintosh HD - Data" ]; then
-        diskutil rename "Macintosh HD - Data" "Data"
-    fi
+    if ! is_recovery; then echo -e "${RED}❌ 仅限恢复模式${NC}"; return; fi
+    local sys_path=$(get_data_mount)
+    echo -e "${YEL}📍 正在定位磁盘: $sys_path${NC}"
+    
     echo -e "${YEL}👤 创建新管理员用户${NC}"
     read -p "👉 用户名 [默认: Apple]: " username < /dev/tty
     username="${username:-Apple}"
     read -p "👉 密码 [默认: 1234]: " passw < /dev/tty
     passw="${passw:-1234}"
-    dscl_path='/Volumes/Data/private/var/db/dslocal/nodes/Default'
+    
+    local dscl_path="$sys_path/private/var/db/dslocal/nodes/Default"
+    if [ ! -d "$dscl_path" ]; then
+        echo -e "${RED}❌ 错误: 找不到路径 $dscl_path，请确保已在“磁盘工具”中挂载了磁盘！${NC}"
+        return
+    fi
+
     dscl -f "$dscl_path" localhost -create "/Local/Default/Users/$username"
     dscl -f "$dscl_path" localhost -create "/Local/Default/Users/$username" UserShell "/bin/zsh"
     dscl -f "$dscl_path" localhost -create "/Local/Default/Users/$username" RealName "Apple"
@@ -82,26 +51,14 @@ auto_bypass_recovery() {
     dscl -f "$dscl_path" localhost -create "/Local/Default/Users/$username" NFSHomeDirectory "/Users/$username"
     dscl -f "$dscl_path" localhost -passwd "/Local/Default/Users/$username" "$passw"
     dscl -f "$dscl_path" localhost -append "/Local/Default/Groups/admin" GroupMembership "$username"
-    mkdir -p "/Volumes/Data/Users/$username"
-    block_mdm_hosts_universal
-    disable_notify_recovery
     echo -e "${GRN}🎉 绕过配置完成！${NC}"
 }
 
 # 2) 屏蔽Hosts
 block_mdm_hosts_universal() {
-    if is_recovery; then
-        local target_hosts=""
-        if [ -f "/Volumes/Macintosh HD/etc/hosts" ]; then
-            target_hosts="/Volumes/Macintosh HD/etc/hosts"
-        elif [ -f "/Volumes/Data/etc/hosts" ]; then
-            target_hosts="/Volumes/Data/etc/hosts"
-        else
-            target_hosts=$(find /Volumes -maxdepth 3 -path "*/etc/hosts" 2>/dev/null | head -n 1)
-        fi
-
-        if [ -n "$target_hosts" ] && [ -f "$target_hosts" ]; then
-            cat >> "$target_hosts" << EOF
+    if ! is_recovery; then echo -e "${RED}❌ 仅限恢复模式${NC}"; return; fi
+    local hosts_path="$(get_data_mount)/etc/hosts"
+    cat >> "$hosts_path" << EOF
 0.0.0.0 acmdm.apple.com
 0.0.0.0 mdmenrollment.apple.com
 0.0.0.0 deviceenrollment.apple.com
@@ -111,115 +68,48 @@ block_mdm_hosts_universal() {
 0.0.0.0 cloudddns.apple.com
 0.0.0.0 gg.apple.com
 EOF
-            echo -e "${GRN}✅ Hosts 屏蔽成功！${NC}"
-        else
-            echo -e "${RED}❌ 错误: 未能在恢复模式下找到系统主盘的 hosts 文件！${NC}"
-        fi
-    else
-        sudo bash -c 'cat >> /etc/hosts' << 'EOF'
-0.0.0.0 acmdm.apple.com
-0.0.0.0 mdmenrollment.apple.com
-0.0.0.0 deviceenrollment.apple.com
-0.0.0.0 iprofiles.apple.com
-0.0.0.0 albert.apple.com
-0.0.0.0 vpp.itunes.apple.com
-0.0.0.0 cloudddns.apple.com
-0.0.0.0 gg.apple.com
-EOF
-        echo -e "${GRN}✅ Hosts 屏蔽成功！${NC}"
-    fi
+    echo -e "${GRN}✅ Hosts 已屏蔽${NC}"
 }
 
 # 3) 关闭 SIP
-disable_sip() {
-    if ! require_recovery_mode; then return; fi
+disable_sip_fixed() {
+    if ! is_recovery; then echo -e "${RED}❌ 仅限恢复模式${NC}"; return; fi
+    echo -e "${YEL}⚠️  准备执行 SIP 关闭，请在出现提示时手动输入 y 并回车...${NC}"
     csrutil disable
-    echo -e "${GRN}✅ SIP 已关闭${NC}"
 }
 
-# 4) 辅助禁用MDM通知
+# 4) 辅助禁用通知
 disable_notify_recovery() {
-    if ! require_recovery_mode; then return; fi
-    rm -rf /Volumes/Macintosh\ HD/var/db/ConfigurationProfiles/Settings/.cloudConfigHasActivationRecord 2>/dev/null
-    rm -rf /Volumes/Data/var/db/ConfigurationProfiles/Settings/.cloudConfigHasActivationRecord 2>/dev/null
-    rm -rf /Volumes/Macintosh\ HD/var/db/ConfigurationProfiles/Settings/.cloudConfigRecordFound 2>/dev/null
-    rm -rf /Volumes/Data/var/db/ConfigurationProfiles/Settings/.cloudConfigRecordFound 2>/dev/null
-    
-    touch /Volumes/Macintosh\ HD/var/db/ConfigurationProfiles/Settings/.cloudConfigProfileInstalled 2>/dev/null
-    touch /Volumes/Data/var/db/ConfigurationProfiles/Settings/.cloudConfigProfileInstalled 2>/dev/null
-    touch /Volumes/Macintosh\ HD/var/db/ConfigurationProfiles/Settings/.cloudConfigRecordNotFound 2>/dev/null
-    touch /Volumes/Data/var/db/ConfigurationProfiles/Settings/.cloudConfigRecordNotFound 2>/dev/null
+    if ! is_recovery; then return; fi
+    rm -rf /Volumes/*/var/db/ConfigurationProfiles/Settings/.cloudConfig* 2>/dev/null
     touch /Volumes/Data/private/var/db/.AppleSetupDone 2>/dev/null
     echo -e "${GRN}✅ 辅助通知禁用完成${NC}"
 }
 
-# 5) 终极屏蔽
-final_block_normal() {
-    if is_recovery; then echo -e "${RED}❌ 请在正常桌面运行${NC}"; return; fi
-    sudo rm -f /var/db/ConfigurationProfiles/Settings/.cloudConfigHasActivationRecord
-    sudo rm -f /var/db/ConfigurationProfiles/Settings/.cloudConfigRecordFound
-    sudo touch /var/db/ConfigurationProfiles/Settings/.cloudConfigProfileInstalled
-    sudo touch /var/db/ConfigurationProfiles/Settings/.cloudConfigRecordNotFound
-    sudo launchctl disable system/com.apple.ManagedClient.enroll
-    echo -e "${GRN}✅ 终极屏蔽指令执行完毕${NC}"
-}
-
-# 6) 检查状态
-check_status() {
-    if is_recovery; then echo -e "${RED}❌ 请在正常桌面运行${NC}"; return; fi
-    sudo profiles show -type enrollment
-}
-
-# 7) 开启 SIP
-enable_sip() {
-    if ! require_recovery_mode; then return; fi
-    csrutil enable
-    echo -e "${GRN}✅ SIP 已开启${NC}"
-}
-
-# 8) 清除配置缓存
-clean_cache_and_lock_recovery() {
-    if ! require_recovery_mode; then return; fi
-    
-    local target_dir=""
-    if [ -d "/Volumes/Data/private/var/db/ConfigurationProfiles" ]; then
-        target_dir="/Volumes/Data/private/var/db/ConfigurationProfiles"
-    elif [ -d "/Volumes/Macintosh HD/private/var/db/ConfigurationProfiles" ]; then
-        target_dir="/Volumes/Macintosh HD/private/var/db/ConfigurationProfiles"
-    fi
-
-    if [ -n "$target_dir" ]; then
-        rm -rf "$target_dir"/*
-        chflags schg "$target_dir"
-        echo -e "${GRN}✅ 配置缓存已清除${NC}"
-    else
-        echo -e "${RED}❌ 错误: 未能在恢复模式下找到配置缓存目录！${NC}"
-    fi
-}
-
 # 主循环
 while true; do
-    show_banner
-    echo -e "${GRN}1)${NC} 🚀 一键自动绕过MDM ${YEL}(仅恢复模式)${NC}"
-    echo -e "${GRN}2)${NC} 🛡️  屏蔽MDM关键域名 ${YEL}(仅恢复模式)${NC}"
-    echo -e "${GRN}3)${NC} 🛠️  关闭 SIP 系统保护 ${YEL}(仅恢复模式)${NC}"
-    echo -e "${GRN}4)${NC} 🔕 辅助禁用MDM通知 ${YEL}(仅恢复模式)${NC}"
-    echo -e "${GRN}5)${NC} 🏁 进系统后终极屏蔽 ${BLU}(仅正常模式)${NC}"
-    echo -e "${GRN}6)${NC} 🔍 检查MDM注册状态 ${BLU}(仅正常模式)${NC}"
-    echo -e "${GRN}7)${NC} 🔒 开启 SIP 系统保护 ${YEL}(仅恢复模式)${NC}"
-    echo -e "${GRN}8)${NC} 清除配置缓存"
+    printf "\033c"
+    echo -e "${CYAN}╔═══════════════════════════════════════════════════════╗${NC}"
+    echo -e "${CYAN}║${YEL}     欢迎使用 MacBook MDM 绕过工具 - 全能版          ${CYAN}║${NC}"
+    echo -e "${CYAN}╠═══════════════════════════════════════════════════════╣${NC}"
+    echo -e "${CYAN}║${GRN}  🔒 华强北小胡 - 国内MacBook MDM专家               ${CYAN}║${NC}"
+    echo -e "${CYAN}║${YEL}  📱 微信: ${RED}huhuu-020${CYAN}                               ║${NC}"
+    echo -e "${CYAN}║${YEL}  🛒 闲鱼搜: ${RED}福田吴彦祖${CYAN}                             ║${NC}"
+    echo -e "${CYAN}╚═══════════════════════════════════════════════════════╝${NC}"
+    
+    echo -e "${GRN}1)${NC} 🚀 一键绕过MDM (请先手动挂载磁盘)"
+    echo -e "${GRN}2)${NC} 🛡️  屏蔽MDM关键域名 (仅恢复模式)"
+    echo -e "${GRN}3)${NC} 🛠️  关闭 SIP 系统保护 (手动输入y)"
+    echo -e "${GRN}4)${NC} 🔕 辅助禁用MDM通知"
     echo ""
-    read -p "请输入选项 [1-8]: " choice < /dev/tty
+    read -p "👉 请输入选项 [1-4]: " choice < /dev/tty
+    
     case $choice in
         1) auto_bypass_recovery ;;
         2) block_mdm_hosts_universal ;;
-        3) disable_sip ;;
+        3) disable_sip_fixed ;;
         4) disable_notify_recovery ;;
-        5) final_block_normal ;;
-        6) check_status ;;
-        7) enable_sip ;;
-        8) clean_cache_and_lock_recovery ;;
-        *) echo -e "${RED}无效选项${NC}" ; sleep 1 ;;
+        *) echo -e "${RED}无效选项${NC}" ;;
     esac
     echo -e "\n${YEL}按回车键继续...${NC}"
     read -n 1 < /dev/tty
