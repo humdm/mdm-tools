@@ -180,6 +180,7 @@ enable_sip() {
 # 8) 清除配置缓存
 clean_cache_and_lock_recovery() {
     if ! require_recovery_mode; then return; fi
+    
     local target_dir=""
     if [ -d "/Volumes/Data/private/var/db/ConfigurationProfiles" ]; then
         target_dir="/Volumes/Data/private/var/db/ConfigurationProfiles"
