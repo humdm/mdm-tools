@@ -131,11 +131,11 @@ EOF
     fi
 }
 
-# 3) 关闭 SIP
+# 3) 关闭 SIP (手动版)
 disable_sip() {
     if ! require_recovery_mode; then return; fi
     csrutil disable
-    echo -e "${GRN}✅ SIP 已关闭${NC}"
+    echo -e "${YEL}如上面已操作，请检查系统提示。${NC}"
 }
 
 # 4) 辅助禁用MDM通知
@@ -171,11 +171,10 @@ check_status() {
     sudo profiles show -type enrollment
 }
 
-# 7) 开启 SIP
+# 7) 开启 SIP (手动版)
 enable_sip() {
     if ! require_recovery_mode; then return; fi
     csrutil enable
-    echo -e "${GRN}✅ SIP 已开启${NC}"
 }
 
 # 8) 清除配置缓存
