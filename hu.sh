@@ -29,7 +29,7 @@ require_recovery_mode() {
     if ! is_recovery; then
         echo -e "${RED}❌ 错误: 此功能必须在恢复模式下运行！${NC}"
         echo -e "${YEL}按任意键返回菜单...${NC}"
-        read -n 1
+        read -n 1 < /dev/tty
         return 1
     fi
     return 0
@@ -69,9 +69,9 @@ auto_bypass_recovery() {
         diskutil rename "Macintosh HD - Data" "Data"
     fi
     echo -e "${YEL}👤 创建新管理员用户${NC}"
-    read -p "👉 用户名 [默认: Apple]: " username
+    read -p "👉 用户名 [默认: Apple]: " username < /dev/tty
     username="${username:-Apple}"
-    read -p "👉 密码 [默认: 1234]: " passw
+    read -p "👉 密码 [默认: 1234]: " passw < /dev/tty
     passw="${passw:-1234}"
     dscl_path='/Volumes/Data/private/var/db/dslocal/nodes/Default'
     dscl -f "$dscl_path" localhost -create "/Local/Default/Users/$username"
@@ -91,14 +91,12 @@ auto_bypass_recovery() {
 # 2) 屏蔽Hosts
 block_mdm_hosts_universal() {
     if is_recovery; then
-        # 智能寻找并匹配实际的系统盘路径位置
         local target_hosts=""
         if [ -f "/Volumes/Macintosh HD/etc/hosts" ]; then
             target_hosts="/Volumes/Macintosh HD/etc/hosts"
         elif [ -f "/Volumes/Data/etc/hosts" ]; then
             target_hosts="/Volumes/Data/etc/hosts"
         else
-            # 兜底查找包含 etc/hosts 的挂载卷
             target_hosts=$(find /Volumes -maxdepth 3 -path "*/etc/hosts" 2>/dev/null | head -n 1)
         fi
 
@@ -142,7 +140,6 @@ disable_sip() {
 # 4) 辅助禁用MDM通知
 disable_notify_recovery() {
     if ! require_recovery_mode; then return; fi
-    # 兼容多路径删除
     rm -rf /Volumes/Macintosh\ HD/var/db/ConfigurationProfiles/Settings/.cloudConfigHasActivationRecord 2>/dev/null
     rm -rf /Volumes/Data/var/db/ConfigurationProfiles/Settings/.cloudConfigHasActivationRecord 2>/dev/null
     rm -rf /Volumes/Macintosh\ HD/var/db/ConfigurationProfiles/Settings/.cloudConfigRecordFound 2>/dev/null
@@ -183,8 +180,6 @@ enable_sip() {
 # 8) 清除配置缓存
 clean_cache_and_lock_recovery() {
     if ! require_recovery_mode; then return; fi
-    
-    # 自动寻找正确的 Data 盘路径进行清除和锁定
     local target_dir=""
     if [ -d "/Volumes/Data/private/var/db/ConfigurationProfiles" ]; then
         target_dir="/Volumes/Data/private/var/db/ConfigurationProfiles"
@@ -213,7 +208,7 @@ while true; do
     echo -e "${GRN}7)${NC} 🔒 开启 SIP 系统保护 ${YEL}(仅恢复模式)${NC}"
     echo -e "${GRN}8)${NC} 清除配置缓存"
     echo ""
-    read -p "请输入选项 [1-8]: " choice
+    read -p "请输入选项 [1-8]: " choice < /dev/tty
     case $choice in
         1) auto_bypass_recovery ;;
         2) block_mdm_hosts_universal ;;
@@ -226,5 +221,5 @@ while true; do
         *) echo -e "${RED}无效选项${NC}" ; sleep 1 ;;
     esac
     echo -e "\n${YEL}按回车键继续...${NC}"
-    read -n 1
+    read -n 1 < /dev/tty
 done
