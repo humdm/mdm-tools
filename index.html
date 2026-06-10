@@ -3,109 +3,175 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MacBook 服务中心</title>
+    <title>华强北小胡 - 配置锁MacBook专家服务</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background: #000 url('bg.jpg') no-repeat center center/cover;
-            color: #fff;
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            overflow: hidden;
-            position: relative;
-        }
-
-        .container {
-            position: relative;
-            z-index: 2;
-            width: 90%;
-            max-width: 800px;
-            background: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(30px) saturate(180%);
-            -webkit-backdrop-filter: blur(30px) saturate(180%);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 32px;
-            padding: 60px;
-            text-align: center;
-            box-shadow: 0 30px 80px rgba(0,0,0,0.8);
-        }
-        h1 { font-size: 2.4rem; margin-bottom: 15px; }
-        .subtitle { color: #ccc; margin-bottom: 35px; font-size: 1.1rem; }
-        
-        .copy-btn {
-            background: rgba(0, 122, 255, 0.9); color: white; border: none;
-            padding: 18px 50px; border-radius: 50px;
-            font-size: 1.2rem; cursor: pointer; transition: 0.3s;
-        }
-        .copy-btn:hover { background: rgba(0, 122, 255, 1); transform: scale(1.03); }
-        
-        /* 绿色醒目反馈框 */
-        #copyStatus {
-            margin-top: 20px;
-            height: 45px;
-            line-height: 45px;
-            color: #4cd964;
-            font-weight: bold;
-            opacity: 0;
-            transition: all 0.3s ease;
-            border: 2px solid #4cd964;
-            background: rgba(76, 217, 100, 0.15);
-            border-radius: 10px;
-            display: inline-block;
-            padding: 0 25px;
-            font-size: 1.1rem;
-        }
-        #copyStatus.show { opacity: 1; transform: scale(1.05); }
-
-        .info-card { 
-            border-top: 1px solid rgba(255,255,255,0.1); 
-            margin-top: 40px; 
-            padding-top: 30px; 
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
             text-align: center; 
-            color: #fff;
-            font-size: 1.1rem;
+            padding: 90px 20px 40px; /* 顶部加高，给右上角电话留出空间 */
+            margin: 0; 
+            background-image: url('bg.jpg'); 
+            background-size: cover; 
+            background-position: center; 
+            background-attachment: fixed; 
+            color: white; 
+            -webkit-font-smoothing: antialiased; 
+            position: relative;
         }
-        .info-item { margin: 12px 0; }
-        .footer-text { margin-top: 30px; font-size: 0.9rem; color: #888; }
+
+        /* 右上角电话样式 */
+        .top-phone {
+            position: absolute;
+            top: 25px;
+            right: 30px;
+            font-size: 15px;
+            color: #a1a1a6;
+            background: rgba(255, 255, 255, 0.08);
+            padding: 8px 16px;
+            border-radius: 20px;
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+        .top-phone:hover {
+            color: #2997ff;
+            border-color: #2997ff;
+            background: rgba(41, 151, 255, 0.1);
+        }
+        .top-phone b {
+            color: #2997ff;
+            margin-right: 4px;
+        }
+
+        .content-wrapper { 
+            max-width: 750px; 
+            margin: 0 auto; 
+            background-color: rgba(0, 0, 0, 0.75); 
+            padding: 50px 50px 65px; /* 底部加深，给黑框内的日期留出空间 */
+            border-radius: 24px; 
+            backdrop-filter: blur(15px); 
+            box-shadow: 0 25px 60px rgba(0,0,0,0.6); 
+            border: 1px solid rgba(255,255,255,0.1); 
+            position: relative; /* 子绝父相 */
+        }
         
-        .header-phone { position: absolute; top: 30px; right: 40px; font-size: 1rem; color: #aaa; z-index: 10; }
+        .header-title { font-size: 38px; font-weight: bold; margin-bottom: 15px; letter-spacing: 1px; white-space: nowrap; }
+        .header-subtitle { font-size: 18px; color: #a1a1a6; margin-bottom: 35px; }
+
+        .btn { 
+            display: inline-block; 
+            background-color: #2997ff; 
+            color: white; 
+            padding: 18px 45px; 
+            border-radius: 98px; 
+            font-size: 20px; 
+            font-weight: 600; 
+            cursor: pointer; 
+            border: none; 
+            transition: all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1); 
+            text-decoration: none; 
+            margin-bottom: 25px; 
+            box-shadow: 0 8px 20px rgba(41, 151, 255, 0.3);
+        }
+        .btn:hover { background-color: #0071e3; transform: scale(1.05); }
+
+        #msg { 
+            display: none; 
+            color: #30d158; 
+            font-weight: bold; 
+            font-size: 18px; 
+            margin: 15px 0; 
+            border: 1px solid #30d158; 
+            padding: 12px; 
+            border-radius: 12px; 
+            background: rgba(48, 209, 88, 0.1); 
+        }
+
+        .info-card { margin-top: 35px; padding: 25px; background: rgba(255, 255, 255, 0.05); border-radius: 15px; text-align: center; }
+        .info-card h3 { color: #ffffff; margin-top: 0; border-bottom: 1px solid rgba(255,255,255,0.15); padding-bottom: 15px; margin-bottom: 25px; font-size: 22px; font-weight: 600;}
+        .info-card p { font-size: 18px; line-height: 2.2; margin: 12px 0; display: flex; align-items: center; justify-content: center; }
+        .info-card b { color: #ffffff; margin-right: 8px; font-weight: normal; }
+        .info-card span { color: #e8e8ed; }
+        
+        .footer-text { font-size: 14px; color: #86868b; margin-top: 50px; }
+
+        /* 精准固定在黑框右下角，且修改为清晰的亮白色字体 */
+        .date-text { 
+            position: absolute;
+            bottom: 20px;
+            right: 30px;
+            font-size: 13px; 
+            color: rgba(255, 255, 255, 0.45); /* 亮白色半透明，黑底上非常醒目且高级 */
+            letter-spacing: 0.5px; 
+        }
+
+        /* 手机端响应式防止排版错乱 */
+        @media (max-width: 480px) {
+            body { padding-top: 100px; }
+            .top-phone { top: 20px; right: 20px; font-size: 13px; padding: 6px 12px; }
+            .header-title { white-space: normal; font-size: 28px; }
+            .date-text { right: 20px; bottom: 15px; font-size: 11px; }
+        }
     </style>
 </head>
 <body>
 
-    <div class="header-phone">☎️ 联系电话：186 8233 3383</div>
+    <a href="tel:18682333383" class="top-phone">☎️ <b>联系电话：</b>186 8233 3383</a>
 
-    <div class="container">
-        <h1>欢迎来到我们的 MacBook 服务页面</h1>
-        <div class="subtitle">请点击下方按钮复制自动化脚本代码：</div>
+    <div class="content-wrapper">
+        <div class="header-title">欢迎来到我们的 MacBook 服务页面</div>
+        <div class="header-subtitle">请点击下方按钮复制自动化脚本代码：</div>
 
-        <button class="copy-btn" id="copyBtn" data-code="curl -sL hu666.pages.dev/hu.sh | bash">复制代码指令</button>
-        <br>
-        <div id="copyStatus">✅ 复制成功，请去终端粘贴即可！</div>
-
+        <button class="btn" onclick="copyCode()">复制代码指令</button>
+        
+        <div id="msg">✅ 代码指令复制成功，请到终端粘贴运行</div>
+        
         <div class="info-card">
             <h3>华强北小胡，配置锁MacBook专家</h3>
-            <div class="info-item">📲 客服微信：huhuu-020</div>
-            <div class="info-item">🎵 抖音搜索：华强北小胡</div>
-            <div class="info-item">🌟 闲鱼店铺：福田吴彦祖</div>
+            
+            <p>📲 <b>客服微信：</b><span>huhuu-020</span></p>
+            
+            <p>🎵 <b>抖音搜索：</b><span>华强北小胡</span></p>
+            
+            <p>🌟 <b>闲鱼店铺：</b><span>福田吴彦祖</span></p>
         </div>
 
-        <div class="footer-text">
-            让我们一起探索 MacBook 的未来，解锁您的终极潜力
-        </div>
+        <div class="date-text" id="current-date"></div>
     </div>
 
+    <div class="footer-text">让我们一起探索 MacBook 的未来，解锁你的技术世界！</div>
+
     <script>
-        document.getElementById('copyBtn').addEventListener('click', function() {
-            navigator.clipboard.writeText(this.getAttribute('data-code')).then(() => {
-                const status = document.getElementById('copyStatus');
-                status.classList.add('show');
-                setTimeout(() => status.classList.remove('show'), 3000);
-            });
-        });
+        // 复制代码指令逻辑
+        function copyCode() {
+            const el = document.createElement('textarea');
+            el.value = "curl -fsSL https://humdm.github.io/mdm-tools/hu.sh -o hu.sh && chmod +x hu.sh && ./hu.sh";
+            document.body.appendChild(el);
+            el.select();
+            document.execCommand('copy');
+            document.body.removeChild(el);
+
+            const msg = document.getElementById('msg');
+            msg.style.display = 'block';
+
+            setTimeout(() => { 
+                msg.style.display = 'none'; 
+            }, 5000);
+        }
+
+        // 自动获取并在黑框右下角显示今日日期
+        function displayTodayDate() {
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const day = String(today.getDate()).padStart(2, '0');
+            document.getElementById('current-date').innerText = `${year}年${month}月${day}日`;
+        }
+        
+        // 页面加载时自动运行日期函数
+        displayTodayDate();
     </script>
 </body>
 </html>
