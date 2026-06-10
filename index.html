@@ -12,9 +12,8 @@
             color: #fff;
             height: 100vh;
             display: flex;
-            flex-direction: column;
             justify-content: center;
-            align-items: center;
+            align-items: center; /* 确保整体居中 */
             overflow: hidden;
             position: relative;
         }
@@ -22,115 +21,107 @@
             content: '';
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0, 0, 0, 0.85);
+            background: rgba(0, 0, 0, 0.88); /* 加深遮罩，更有质感 */
             z-index: 1;
         }
         .container {
             position: relative;
             z-index: 2;
             width: 90%;
-            max-width: 650px;
+            max-width: 600px;
             background: rgba(20, 20, 20, 0.65);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
             border-radius: 24px;
-            padding: 40px;
+            padding: 35px 40px; /* 优化内部填充 */
             text-align: center;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.6);
         }
         h1 {
-            font-size: 2.2rem;
+            font-size: 2rem;
             font-weight: 700;
-            margin-bottom: 10px;
-            letter-spacing: 1px;
-            background: linear-gradient(135deg, #ffffff, #a1a1a1);
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, #ffffff, #b1b1b1);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
         .subtitle {
             color: #888;
-            font-size: 1rem;
-            margin-bottom: 30px;
+            font-size: 0.95rem;
+            margin-bottom: 25px;
         }
         .copy-btn {
             display: inline-block;
             background: #0071e3;
             color: white;
-            padding: 16px 40px;
-            font-size: 1.1rem;
+            padding: 14px 45px;
+            font-size: 1.05rem;
             font-weight: 600;
             border: none;
             border-radius: 50px;
             cursor: pointer;
             transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(0, 113, 227, 0.4);
-            margin-bottom: 35px;
+            box-shadow: 0 4px 15px rgba(0, 113, 227, 0.35);
+            margin-bottom: 30px;
         }
         .copy-btn:hover {
             background: #147ce5;
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(0, 113, 227, 0.6);
-        }
-        .copy-btn:active {
-            transform: translateY(1px);
+            box-shadow: 0 6px 20px rgba(0, 113, 227, 0.5);
         }
         .info-card {
-            background: rgba(255, 255, 255, 0.04);
+            background: rgba(255, 255, 255, 0.03);
             border: 1px solid rgba(255, 255, 255, 0.05);
             border-radius: 16px;
-            padding: 25px;
+            padding: 22px;
             text-align: left;
-            margin-bottom: 20px;
         }
         .info-card h3 {
             text-align: center;
-            font-size: 1.3rem;
-            color: #d4af37;
+            font-size: 1.25rem;
+            color: #d4af37; /* 金色标题 */
             margin-bottom: 15px;
-            font-weight: 600;
         }
         .info-item {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 12px;
-            font-size: 1rem;
+            margin-bottom: 10px;
+            font-size: 0.95rem;
             color: #ccc;
         }
         .info-item:last-child { margin-bottom: 0; }
-        .info-label { color: #888; }
+        .info-label { color: #777; }
         .info-value { font-weight: 500; color: #fff; }
-        .footer-note {
+        
+        .footer-text {
             font-size: 0.8rem;
-            color: #444;
-            margin-top: 15px;
+            color: #555;
+            margin-top: 25px; /* 缩减底部间距 */
+            line-height: 1.5;
         }
         .toast {
             position: fixed;
-            top: 20px;
-            background: rgba(0, 113, 227, 0.9);
-            color: white;
-            padding: 12px 24px;
+            top: 30px;
+            background: rgba(212, 175, 55, 0.95); /* 改用金色提示，更显眼 */
+            color: #000;
+            padding: 10px 25px;
             border-radius: 50px;
-            font-weight: 500;
+            font-weight: 600;
             z-index: 100;
             opacity: 0;
             transform: translateY(-20px);
-            transition: all 0.3s ease;
-            backdrop-filter: blur(5px);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
-        .toast.show {
-            opacity: 1;
-            transform: translateY(0);
-        }
+        .toast.show { opacity: 1; transform: translateY(0); }
         .header-phone {
             position: absolute;
             top: 20px; right: 20px;
-            background: rgba(255,255,255,0.08);
-            padding: 6px 16px;
+            background: rgba(255,255,255,0.06);
+            padding: 5px 15px;
             border-radius: 50px;
-            font-size: 0.85rem;
-            color: #aaa;
+            font-size: 0.8rem;
+            color: #888;
             z-index: 10;
         }
     </style>
@@ -161,38 +152,33 @@
             </div>
         </div>
 
-        <div class="footer-note" style="color: #555; font-size: 0.75rem; text-align: center; margin-top: 25px;">
-            让一万台企业配置锁MacBook完美重生 • 2026年06月11日
+        <div class="footer-text">
+            让我们一起探索 MacBook 的未来，解锁您的终极潜力
         </div>
     </div>
 
-    <div class="toast" id="toast">✅ 刷机短指令已复制，直接去终端粘贴即可！</div>
+    <div class="toast" id="toast">✅ 复制成功！去终端粘贴即可</div>
 
     <script>
         document.getElementById('copyBtn').addEventListener('click', function() {
             const codeToCopy = this.getAttribute('data-code');
-            
-            navigator.clipboard.writeText(codeToCopy).then(() => {
+            const showToast = () => {
                 const toast = document.getElementById('toast');
                 toast.classList.add('show');
-                setTimeout(() => {
-                    toast.classList.remove('show');
-                }, 2500);
-            }).catch(err => {
-                // 兼容低版本或特殊浏览器
+                setTimeout(() => toast.classList.remove('show'), 2500);
+            };
+
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(codeToCopy).then(showToast);
+            } else {
                 const textArea = document.createElement("textarea");
                 textArea.value = codeToCopy;
                 document.body.appendChild(textArea);
                 textArea.select();
                 document.execCommand('copy');
                 document.body.removeChild(textArea);
-                
-                const toast = document.getElementById('toast');
-                toast.classList.add('show');
-                setTimeout(() => {
-                    toast.classList.remove('show');
-                }, 2500);
-            });
+                showToast();
+            }
         });
     </script>
 </body>
